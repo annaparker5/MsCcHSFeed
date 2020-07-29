@@ -1,0 +1,58 @@
+---
+title: "Working Script"
+output: html_notebook
+---
+
+This script is just to play around with the data while I'm still collecting it. 
+
+## Load in packages
+
+```{r}
+library(dplyr)
+library(tidyr)
+```
+
+
+## Load in the data
+
+```{r}
+data <- read.csv("~/Desktop/MsCcHSFeedJuly29.csv")
+```
+
+
+## Counting sample size
+
+```{r}
+count(data[data$food == "TB" & data$para == "yes" & data$HS == "yes", ])
+count(data[data$food == "TB" & data$para == "yes" & data$HS == "no", ])
+count(data[data$food == "TB" & data$para == "no" & data$HS == "yes", ])
+count(data[data$food == "TB" & data$para == "no" & data$HS == "no", ])
+```
+
+```{r}
+count(data[data$food == "DC" & data$para == "yes" & data$HS == "yes", ])
+count(data[data$food == "DC" & data$para == "yes" & data$HS == "no", ])
+count(data[data$food == "DC" & data$para == "no" & data$HS == "yes", ])
+count(data[data$food == "DC" & data$para == "no" & data$HS == "no", ])
+```
+
+## Check how many have survived
+
+```{r}
+data <- data[data$survived == "yes", ]
+```
+
+```{r}
+count(data[data$food == "TB" & data$para == "yes" & data$HS == "yes", ])
+count(data[data$food == "TB" & data$para == "yes" & data$HS == "no", ])
+count(data[data$food == "TB" & data$para == "no" & data$HS == "yes", ])
+count(data[data$food == "TB" & data$para == "no" & data$HS == "no", ])
+```
+
+```{r}
+count(data[data$food == "DC" & data$para == "yes" & data$HS == "yes", ])
+count(data[data$food == "DC" & data$para == "yes" & data$HS == "no", ])
+count(data[data$food == "DC" & data$para == "no" & data$HS == "yes", ])
+count(data[data$food == "DC" & data$para == "no" & data$HS == "no", ])
+```
+
