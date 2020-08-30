@@ -16,7 +16,7 @@ library(tidyr)
 ## Load in the data
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedAug4.csv")
+data <- read.csv("~/Desktop/MsCcHSFeedAug30.csv")
 ```
 
 
