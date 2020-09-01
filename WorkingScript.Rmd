@@ -150,7 +150,7 @@ ggplot(data, aes(x = mass.max, y = area)) +
 
 
 
-Now, let's run some preliminary analyses:
+Now, let's run some preliminary analyses (this is probably whack because it's bimodal):
 
 ```{r}
 mod1 <- lm(area ~ food + fate, data = data)
