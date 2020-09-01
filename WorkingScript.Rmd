@@ -18,7 +18,7 @@ library(lme4)
 ## Load in the data
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedAug30.csv")
+data <- read.csv("~/Desktop/MsCcHSFeedSep1.csv")
 ```
 
 
@@ -41,7 +41,7 @@ count(data[data$food == "DC" & data$para == "no" & data$HS == "no", ])
 ## Check how many have survived
 
 ```{r}
-data <- data[data$survived == "yes", ]
+data <- data[data$fate != "dead", ]
 ```
 
 ```{r}
@@ -115,9 +115,6 @@ Step 8 proved to be more complicated, so it's listed below...
 ```{r}
 consumedsum$ID <- as.numeric(consumedsum$ID)
 
-consumedsum <- consumedsum[consumedsum$ID != 707, ]
-consumedsum <- consumedsum[consumedsum$ID != 1816, ]
-
 consumedsum <- consumedsum[consumedsum$ID %in% data$ID, ]
 
 data <- data[data$ID %in% consumedsum$ID, ]
@@ -132,7 +129,7 @@ YAY!!!
 Now, let's run some preliminary analyses:
 
 ```{r}
-mod1 <- lmer(area ~ food + (1|bin), data = data)
+mod1 <- lmer(area ~ food + fate + (1|bin), data = data)
 
 summary(mod1)
 ```
