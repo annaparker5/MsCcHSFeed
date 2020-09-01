@@ -10,6 +10,8 @@ This script is just to play around with the data while I'm still collecting it.
 ```{r}
 library(dplyr)
 library(tidyr)
+library(ggplot2)
+library(lme4)
 ```
 
 
@@ -55,4 +57,94 @@ count(data[data$food == "DC" & data$para == "yes" & data$HS == "no", ])
 count(data[data$food == "DC" & data$para == "no" & data$HS == "yes", ])
 count(data[data$food == "DC" & data$para == "no" & data$HS == "no", ])
 ```
+
+## Load in the leaf area data
+
+```{r}
+scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanAug29.csv", header = T)
+```
+
+## Write a for-loop for getting the amounts eaten 
+
+0. Create output file 
+1. Combine Leaf ID and cat ID into one ID 
+2. Parse by unique  ID
+3. Subtract min measurement from max measurement
+4. Record with comb ID
+5. Separate out catID and leaf ID
+6. Create new output structure
+7. Sum for each cat ID 
+8. Combine with main dataset as a column
+
+```{r}
+#1
+scan$comb <- paste(scan$Caterpillar.ID, "_", scan$Leaf.ID)
+
+#0
+unique <- unique(scan$comb)
+consumed <- as.data.frame(unique)
+consumed$area <- 0
+
+#2-4
+for (i in 1:length(consumed$unique)){
+    subset <- filter(scan, scan$comb == consumed[i, 1])
+    value <- max(subset$Leaf.Area) - min(subset$Leaf.Area)
+    consumed[i, 2] <- value
+}  
+
+#5
+consumed <- consumed %>%
+  separate(unique, c("catID", "leafID"), "_")
+
+#6
+ID <- unique(consumed$catID)
+consumedsum <- as.data.frame(ID)
+consumedsum$totalarea <- 0
+
+#7
+for (i in 1:length(consumedsum$ID)){
+  subset2 <- filter(consumed, consumed$catID == consumedsum[i, 1])
+  value2 <- sum(subset2$area)
+  consumedsum[i, 2] <- value2
+}
+
+```
+
+Step 8 proved to be more complicated, so it's listed below... 
+
+```{r}
+consumedsum$ID <- as.numeric(consumedsum$ID)
+
+consumedsum <- consumedsum[consumedsum$ID != 707, ]
+consumedsum <- consumedsum[consumedsum$ID != 1816, ]
+
+consumedsum <- consumedsum[consumedsum$ID %in% data$ID, ]
+
+data <- data[data$ID %in% consumedsum$ID, ]
+
+consumedsum <- consumedsum[order(consumedsum$ID), ]
+
+data$area <- consumedsum$totalarea
+```
+
+YAY!!!
+
+Now, let's run some preliminary analyses:
+
+```{r}
+mod1 <- lmer(area ~ food + (1|bin), data = data)
+
+summary(mod1)
+```
+
+
+
+```{r}
+dataDC <- data[data$food == "DC", ]
+dataTB <- data[data$food == "TB", ]
+
+t.test(dataDC$area, dataTB$area)
+```
+
+
 
