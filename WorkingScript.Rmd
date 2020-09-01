@@ -41,7 +41,7 @@ count(data[data$food == "DC" & data$para == "no" & data$HS == "no", ])
 ## Check how many have survived
 
 ```{r}
-data <- data[data$fate != "dead", ]
+data <- data[data$fate != "dead" & data$fate != "quink", ]
 ```
 
 ```{r}
@@ -126,10 +126,34 @@ data$area <- consumedsum$totalarea
 
 YAY!!!
 
+# Graphing
+
+Let's graph maximum mass reached:
+
+```{r}
+ggplot(data = data, aes(x = mass.max)) + 
+  geom_histogram(binwidth = 500)
+```
+
+Now, let's graph area to see if it's "normal". 
+
+```{r}
+ggplot(data, aes(x = area)) + 
+  geom_histogram(binwidth = 250)
+```
+Nope, definitely bimodal
+
+```{r}
+ggplot(data, aes(x = mass.max, y = area)) + 
+  geom_point(aes(color = fate))
+```
+
+
+
 Now, let's run some preliminary analyses:
 
 ```{r}
-mod1 <- lmer(area ~ food + fate + (1|bin), data = data)
+mod1 <- lm(area ~ food + fate, data = data)
 
 summary(mod1)
 ```
