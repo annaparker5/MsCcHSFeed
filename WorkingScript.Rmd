@@ -145,7 +145,7 @@ Nope, definitely bimodal
 
 ```{r}
 ggplot(data, aes(x = mass.max, y = area)) + 
-  geom_point(aes(color = fate))
+  geom_point(aes(color = food))
 ```
 
 
@@ -153,9 +153,21 @@ ggplot(data, aes(x = mass.max, y = area)) +
 Now, let's run some preliminary analyses (this is probably whack because it's bimodal):
 
 ```{r}
-mod1 <- lm(area ~ food + fate, data = data)
+mod1 <- lm(area ~ food*para*HS + mass.max, data = data)
 
 summary(mod1)
+```
+
+```{r}
+mod2 <- lm(mass.max ~ food*para*HS, data = data)
+
+summary(mod2)
+```
+
+```{r}
+mod3 <- lm(area ~ mass.max, data = data)
+
+summary(mod3)
 ```
 
 
