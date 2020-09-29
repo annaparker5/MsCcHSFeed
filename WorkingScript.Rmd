@@ -18,7 +18,7 @@ library(lme4)
 ## Load in the data
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedSep1.csv")
+data <- read.csv("~/Desktop/MsCcHSFeedSep15modfinal.csv")
 ```
 
 
@@ -61,7 +61,7 @@ count(data[data$food == "DC" & data$para == "no" & data$HS == "no", ])
 ## Load in the leaf area data
 
 ```{r}
-scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanAug29.csv", header = T)
+scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
 ```
 
 ## Write a for-loop for getting the amounts eaten 
@@ -145,9 +145,14 @@ Nope, definitely bimodal
 
 ```{r}
 ggplot(data, aes(x = mass.max, y = area)) + 
-  geom_point(aes(color = food))
+  geom_point(aes(color = food)) + 
+  labs(x = "Maximum mass achieved (mg)", y = "Leaf surface area consumed (cm2)", color = "Food type")
 ```
 
+```{r}
+ggplot(data, aes(x = mass.max, y = area)) + 
+  geom_point(aes(color = fate))
+```
 
 
 Now, let's run some preliminary analyses (this is probably whack because it's bimodal):
@@ -157,6 +162,19 @@ mod1 <- lm(area ~ food*para*HS + mass.max, data = data)
 
 summary(mod1)
 ```
+
+```{r}
+mod1.5 <- lm(area ~ mass.max + food, data = data)
+
+summary(mod1.5)
+```
+
+```{r}
+mod1.75 <- lm(area ~ mass.max + food*para, data = data)
+
+summary(mod1.75)
+```
+
 
 ```{r}
 mod2 <- lm(mass.max ~ food*para*HS, data = data)
@@ -179,5 +197,85 @@ dataTB <- data[data$food == "TB", ]
 t.test(dataDC$area, dataTB$area)
 ```
 
+## Adding in random effect of bin 
 
+```{r}
+mod4 <- lmer(area ~ mass.max + (1|bin), data = data)
+
+summary(mod4)
+```
+
+It's a singluar fit - I could switch all of my individual bins to the same number? Would that work? 
+
+Let's check the effect of group vs. individual bins
+
+```{r}
+mod5 <- lmer(area ~ mass.max + (1|bin.type), data = data)
+
+summary(mod5)
+```
+
+```{r}
+mod6 <- lmer(mass.max ~ food*para*HS + (1|bin), data = data)
+
+summary(mod6)
+```
+
+```{r}
+mod6.5 <- lmer(mass.max ~ food + para + HS + (1|bin), data = data)
+
+summary(mod6.5)
+```
+
+
+The above model is the only one that isn't singular!! 
+
+```{r}
+mod7 <- lmer(mass.max ~ food*para*HS + (1|bin.type), data = data)
+
+summary(mod7)
+```
+
+```{r}
+mod8 <- lmer(mass.max ~ para*HS + (1|bin), data = data)
+
+summary(mod8)
+```
+
+
+Let's test some models with AIC
+
+```{r}
+AIC(mod1, mod1.5, mod1.75, mod3, mod4, mod5)
+```
+
+Model 1 and model 1.75 are indistinguishable - so you need food and para and their interaction to get the full picture for area
+
+```{r}
+AIC(mod2,mod6, mod6.5, mod7, mod8)
+```
+
+Mods 6 and 7 are indistinguishable - you need the random effect of bin, but bin and bin type have the same effect? You also need all the interactive terms, even though they aren't significant. 
+
+```{r}
+data2 <- read.csv("~/Desktop/MsCcHSFeedSep15binmod2.csv")
+```
+
+```{r}
+consumedsum2 <- consumedsum[consumedsum$ID %in% data2$ID, ]
+
+data2 <- data2[data2$ID %in% consumedsum2$ID, ]
+
+consumedsum2 <- consumedsum2[order(consumedsum2$ID), ]
+
+data2$area <- consumedsum2$totalarea
+```
+
+Let's try it now 
+
+```{r}
+modcomb <- lmer(area ~ mass.max + (1|bin), data = data2)
+
+summary(modcomb)
+```
 
