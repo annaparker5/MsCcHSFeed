@@ -12,13 +12,14 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(lme4)
+library(lubridate)
 ```
 
 
 ## Load in the data
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedSep15modfinal.csv")
+data <- read.csv("~/Desktop/MsCcHSFeedNov30modfinal.csv")
 ```
 
 
@@ -145,15 +146,35 @@ Nope, definitely bimodal
 
 ```{r}
 ggplot(data, aes(x = mass.max, y = area)) + 
+  theme_bw() + 
   geom_point(aes(color = food)) + 
   labs(x = "Maximum mass achieved (mg)", y = "Leaf surface area consumed (cm2)", color = "Food type")
 ```
 
 ```{r}
 ggplot(data, aes(x = mass.max, y = area)) + 
-  geom_point(aes(color = fate))
+  theme_bw() + 
+  geom_point(aes(color = fate, shape = food)) + 
+  #scale_color_viridis_d() + 
+  scale_shape_manual(values = c(19,6)) + 
+  labs(x = "Maximum mass achieved (mg)", y = "Leaf surface area consumed (cm2)")
+```
+```{r}
+data <- data[data$fate != "wander*", ]
+
+modfate <- lmer(mass.max ~ fate*food + (1|bin), data = data)
+
+summary(modfate)
 ```
 
+
+```{r}
+ggplot(data, aes(x = mass.max, y = area)) + 
+  theme_bw() + 
+  geom_point(aes(color = treatment)) + 
+  scale_color_viridis_d() + 
+  labs(x = "Maximum mass achieved (mg)", y = "Leaf surface area consumed (cm2)", color = "Treatment")
+```
 
 Now, let's run some preliminary analyses (this is probably whack because it's bimodal):
 
@@ -175,6 +196,12 @@ mod1.75 <- lm(area ~ mass.max + food*para, data = data)
 summary(mod1.75)
 ```
 
+```{r}
+mod1.9 <- lm(area ~ food*para*HS, data = data)
+
+summary(mod1.9)
+```
+
 
 ```{r}
 mod2 <- lm(mass.max ~ food*para*HS, data = data)
@@ -188,7 +215,11 @@ mod3 <- lm(area ~ mass.max, data = data)
 summary(mod3)
 ```
 
+```{r}
+mod3.5 <- lm(mass.max ~ area, data = data )
 
+summary(mod3.5)
+```
 
 ```{r}
 dataDC <- data[data$food == "DC", ]
@@ -278,4 +309,123 @@ modcomb <- lmer(area ~ mass.max + (1|bin), data = data2)
 
 summary(modcomb)
 ```
+
+## Age vs. Mass plots 
+
+```{r}
+# Internal process of the loop to convert days to dates
+expt_day <- function(start.date, date){
+  date <- mdy(date)
+  start <- mdy(start.date)
+  diff <- yday(date) - yday(start)
+
+  return(diff)
+}
+
+# Code for the loop itself
+loop <- function(start.date, date.list){
+  days <- rep(NA, length(date.list))
+  for (i in 1:(length(days))){
+    days[i] <- expt_day(start.date = start.date, date = date.list[i])
+  }
+  return(days)
+}
+
+# Convert all the dates to days
+
+data$day.hatch <- loop(start.date = "07/12/2020", date.list = data$date.hatch)
+data$day.3rd <- loop(start.date = "07/12/2020", date.list = data$date.3rd)
+data$day.4th <- loop(start.date = "07/12/2020", date.list = data$date.4th)
+data$day.5th <- loop(start.date = "07/12/2020", date.list = data$date.5th)
+data$day.w <- loop(start.date = "07/12/2020", date.list = data$date.w)
+data$day.remove <- loop(start.date = "07/12/2020", date.list = data$date.remove)
+#data$day.5th.2 <- loop(start.date = "07/12/2020", date.list = data$date.5th.2)
+#data$day.5th.3 <- loop(start.date = "07/12/2020", date.list = data$date.5th.3)
+#data$day.5th.4 <- loop(start.date = "07/12/2020", date.list = data$date.5th.4)
+#data$day.6th <- loop(start.date = "07/12/2020", date.list = data$date.6th)
+#data$day.6th.2 <- loop(start.date = "07/12/2020", date.list = data$date.6th.2)
+#data$day.6th.3 <- loop(start.date = "07/12/2020", date.list = data$date.6th.3)
+#data$day.7th <- loop(start.date = "07/12/2020", date.list = data$date.7th)
+#data$day.7th.2 <- loop(start.date = "07/12/2020", date.list = data$date.7th.2)
+#data$day.7th.3 <- loop(start.date = "07/12/2020", date.list = data$date.7th.3)
+data$day.max <- loop(start.date = "07/12/2020", date.list = data$date.max)
+```
+
+```{r}
+# Time til each instar
+data$tth <- 0
+data$tt3 <- data$day.3rd - data$day.hatch
+data$tt4 <- data$day.4th - data$day.hatch
+data$tt5 <- data$day.5th - data$day.hatch
+data$ttw <- data$day.w - data$day.hatch
+data$ttrem <- data$day.remove - data$day.hatch
+data$ttmax <- data$day.max - data$day.hatch
+
+# Mass at each instar -> natural log of mass
+
+data$lnh <- log(data$mass.hatch)
+data$ln3 <- log(data$mass.3rd)
+data$ln4 <- log(data$mass.4th)
+data$ln5 <- log(data$mass.5th)
+data$lnw <- log(data$mass.w)
+data$lnrem <- log(data$mass.remove)
+data$lnmax <- log(data$mass.max)
+
+```
+
+```{r}
+masslong <- data %>% gather(instar, mass, mass.3rd, mass.4th, mass.5th, mass.max)
+masslong$instar <- gsub("mass.", "", masslong$instar)
+masslong$instar <- gsub("rd", "", masslong$instar)
+masslong$instar <- gsub("th", "", masslong$instar)
+
+agelong <- data %>% gather(instar, age, tth, tt3, tt4, tt5, ttmax)
+agelong$instar <- gsub("tt", "", agelong$instar)
+
+masslong <- masslong %>% select(ID, treatment, food, instar, mass)
+agelong <- agelong %>% select(ID, treatment, food, instar, age)
+
+datalong <- merge(masslong, agelong, by = c("ID", "treatment", "food", "instar"))
+
+
+```
+
+
+
+```{r}
+lnmasslong <- data %>% gather(instar, mass, lnh, ln3, ln4, ln5, lnw, lnrem, lnmax)
+lnmasslong$instar <- gsub("ln", "", lnmasslong$instar)
+
+lnmasslong <- lnmasslong %>% select(ID, treatment, instar, mass)
+
+lndatalong <- merge(lnmasslong, agelong, by=c("ID", "treatment", "instar"))
+```
+
+```{r}
+devplot <- ggplot(datalong, aes(x = age, y = mass, group = ID, color = treatment, shape = food)) + 
+  theme_bw() + 
+  geom_point() +
+  scale_shape_manual(values = c(1, 19)) + 
+  geom_line(aes(linetype = food), alpha = 0.5) + 
+  scale_linetype_manual(values = c("dotdash", "solid")) + 
+  scale_color_viridis_d() + 
+  labs(x = "Developmental age (days)", y = "Mass gained (mg)", shape = "Hostplant", linetype = "Hostplant", 
+       color = "Treatment group")
+
+devplot
+```
+
+
+
+```{r}
+lndevplot <- ggplot(lndatalong, aes(x = age, y = mass, group = ID, color = treatment)) + 
+  geom_point() +
+  geom_line(alpha = 0.5) + 
+  scale_color_viridis_d() + 
+  labs(x = "Developmental age (days)", y = "Natural log of mass gained")
+
+lndevplot
+  
+```
+
 
