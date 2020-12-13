@@ -126,12 +126,13 @@ wowe mongo: #450D54
 ### Maximum mass gained and age at that point
 
 ```{r}
-ggplot(aes(x = ttmax, y = mass.max, color = fate), data = DCdata) +
+ggplot(aes(x = ttmax, y = mass.max, color = fate, shape = food), data = data) +
   theme_bw() + 
   geom_point(alpha = 0.8) + 
+  scale_shape_manual(values = c(19, 6)) + 
   scale_color_manual(values = c("#66CB5D", "#21908D", "#3E4F8A", "#450D54")) + 
   labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (mg)", 
-       color = "Developmental Outcome")
+       color = "Developmental Outcome", shape = "Hostplant Consumed")
 ```
 
 ```{r}
@@ -149,12 +150,13 @@ ggplot(aes(x = ttmax, y = mass.max, color = fate), data = dataPHS) +
 ### Maximum mass compared to plant matter consumed
 
 ```{r}
-ggplot(aes(x = area, y = mass.max), data = DCdata) + 
+ggplot(aes(x = area, y = mass.max), data = data) + 
   theme_bw() + 
-  geom_point(aes(color = fate)) + 
+  geom_point(aes(color = fate, shape = food)) + 
+  scale_shape_manual(values = c(19, 6)) + 
   scale_color_manual(values = c("#66CB5D", "#21908D", "#3E4F8A", "#450D54")) +
   labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
-       color = "Developmental Outcome")
+       color = "Developmental Outcome", shape = "Hostplant Consumed")
 ```
 ```{r}
 
