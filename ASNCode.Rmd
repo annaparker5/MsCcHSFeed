@@ -20,7 +20,7 @@ library(viridisLite)
 ## Load in data
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedNov30modfinal.csv")
+data <- read.csv("~/Desktop/MsCcHSFeedDec14final.csv")
 scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
 ```
 
@@ -28,6 +28,12 @@ scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
 
 ```{r}
 data <- data[data$fate != "dead" & data$fate != "quink" & data$fate != "wander*" & data$fate != "?", ]
+
+data$outcome <- data$fate
+
+data$outcome <- gsub(" mongo", "", data$outcome)
+data$outcome <- gsub("em", "we", data$outcome)
+
 ```
 
 
@@ -103,6 +109,14 @@ data$day.max <- loop(start.date = "07/12/2020", date.list = data$date.max)
 data$ttmax <- data$day.max - data$day.hatch
 ```
 
+```{r}
+data$perc.w.ecl <- data$num.w.eclos / (data$num.w.coc + data$num.w.larvae)
+data$num.w.total <- (data$num.w.coc + data$num.w.larvae)
+
+data$HS <- factor(data$HS, levels = c("yes", "no"))
+```
+
+
 
 ## Graphs
 
@@ -111,26 +125,38 @@ TBdata <- data[data$food == "TB", ]
 DCdata <- data[data$food == "DC", ]
 ```
 
-Four colors I'm using: 
+Three colors I'm using: 
 
-emerged: #66CB5D
-wander: #21908D
-wowe: #3E4F8A
-wowe mongo: #450D54
+("#66CB5D", "#21908D", "#3E4F8A", "#450D54")
+("#460F5A", "#87D548", "#30B67B")
+
+
+wander: #882255
+we: #88CCEE
+wowe: #117733
 
 ### Wasp fate
 
-
+```{r}
+ggplot(aes(x = num.w.total, y = perc.w.ecl, color = HS), data = data) + 
+  theme_bw() + 
+  geom_smooth(method = "lm", se = F) +
+  geom_point(alpha = 0.8, aes(shape = food)) + 
+  scale_shape_manual(values = c(19, 6)) +
+  scale_color_manual(values = c("#EF000D", "#00CFD2")) + 
+  labs(x = "Number of wasps emerged", y = "Percentage of wasps eclosed", shape = "Hostplant Consumed", 
+       color = "Heat Shock Status")
+```
 
 
 ### Maximum mass gained and age at that point
 
 ```{r}
-ggplot(aes(x = ttmax, y = mass.max, color = fate, shape = food), data = data) +
+ggplot(aes(x = ttmax, y = mass.max, color = outcome, shape = food), data = data) +
   theme_bw() + 
   geom_point(alpha = 0.8) + 
   scale_shape_manual(values = c(19, 6)) + 
-  scale_color_manual(values = c("#66CB5D", "#21908D", "#3E4F8A", "#450D54")) + 
+  scale_color_manual(values = c("#882255", "#88CCEE", "#117733")) + 
   labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (mg)", 
        color = "Developmental Outcome", shape = "Hostplant Consumed")
 ```
@@ -152,13 +178,11 @@ ggplot(aes(x = ttmax, y = mass.max, color = fate), data = dataPHS) +
 ```{r}
 ggplot(aes(x = area, y = mass.max), data = data) + 
   theme_bw() + 
-  geom_point(aes(color = fate, shape = food)) + 
+  geom_point(aes(color = outcome, shape = food)) + 
   scale_shape_manual(values = c(19, 6)) + 
-  scale_color_manual(values = c("#66CB5D", "#21908D", "#3E4F8A", "#450D54")) +
+  scale_color_manual(values = c("#882255", "#88CCEE", "#117733")) +
   labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
        color = "Developmental Outcome", shape = "Hostplant Consumed")
 ```
-```{r}
 
-```
 
