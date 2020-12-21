@@ -20,7 +20,7 @@ library(viridisLite)
 ## Load in data
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedDec14final.csv")
+data <- read.csv("~/Desktop/MsCcHSFeedDec19final.csv")
 scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
 ```
 
@@ -140,11 +140,12 @@ wowe: #117733
 ```{r}
 ggplot(aes(x = num.w.total, y = perc.w.ecl, color = HS), data = data) + 
   theme_bw() + 
+  ylim(0, 1.05) + 
   geom_smooth(method = "lm", se = F) +
   geom_point(alpha = 0.8, aes(shape = food)) + 
   scale_shape_manual(values = c(19, 6)) +
   scale_color_manual(values = c("#EF000D", "#00CFD2")) + 
-  labs(x = "Number of wasps emerged", y = "Percentage of wasps eclosed", shape = "Hostplant Consumed", 
+  labs(x = "Number emerged", y = "Percentage of wasps eclosed", shape = "Hostplant Consumed", 
        color = "Heat Shock Status")
 ```
 
