@@ -122,18 +122,6 @@ data$para <- factor(data$para, levels = c("yes", "no"))
 
 ## Graphs
 
-### Wasp fate
-
-```{r}
-ggplot(aes(x = num.w.total, y = perc.w.ecl, color = food), data = data) + 
-  theme_bw() + 
-  ylim(0, 1.05) + 
-  geom_point(aes(shape = treatment)) + 
-  scale_shape_manual(values = c(19, 1, 17, 2)) +
-  labs(x = "Number emerged", y = "Percentage of wasps eclosed", color = "Hostplant Consumed", 
-       shape = "Heat Shock Status")
-```
-
 ### Maximum mass gained and age at that point
 
 ```{r}
@@ -177,7 +165,67 @@ ggplot(aes(x = ttmax, y = mass.max, color = food, shape = treatment), data = dat
 ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN3.png", width = 8, height = 5)
 ```
 
+### Maximum mass compared to plant matter consumed
 
+
+```{r}
+ggplot(aes(x = area, y = mass.max, color = food, shape = treatment), 
+       data = data[data$para == "no", ]) + 
+  theme_bw() + 
+  xlim(0, 6000) + 
+  ylim(0, 20) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN4.png", width = 8, height = 5)
+```
+
+
+```{r}
+ggplot(aes(x = area, y = mass.max, color = food, shape = treatment), 
+       data = data[data$treatment != "P HS", ]) + 
+  theme_bw() + 
+  xlim(0, 6000) + 
+  ylim(0, 20) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 2)) + 
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN5.png", width = 8, height = 5)
+```
+
+
+```{r}
+ggplot(aes(x = area, y = mass.max, color = food, shape = treatment), data = data) + 
+  theme_bw() + 
+  xlim(0, 6000) + 
+  ylim(0, 20) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN6.png", width = 8, height = 5)
+```
+
+
+
+### Wasp fate
+
+```{r}
+ggplot(aes(x = num.w.total, y = perc.w.ecl, color = food), data = data) + 
+  theme_bw() + 
+  ylim(0, 1.05) + 
+  geom_point(aes(shape = treatment)) + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) +
+  labs(x = "Number emerged", y = "Percentage of wasps eclosed", color = "Hostplant Consumed", 
+       shape = "Heat Shock Status")
+
+
+```
 
 # ----- ARCHIVE ----- DO NOT RUN -----
 
