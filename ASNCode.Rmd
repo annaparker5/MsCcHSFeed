@@ -20,7 +20,7 @@ library(viridisLite)
 ## Load in data
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedDec19final.csv")
+data <- read.csv("~/Desktop/MsCcHSFeedDec27Final.csv")
 scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
 ```
 
@@ -33,6 +33,8 @@ data$outcome <- data$fate
 
 data$outcome <- gsub(" mongo", "", data$outcome)
 data$outcome <- gsub("em", "we", data$outcome)
+
+data$mass.max <- data$mass.max / 1000 
 
 ```
 
@@ -114,9 +116,70 @@ data$perc.w.ecl <- data$num.w.eclos / (data$num.w.coc + data$num.w.larvae)
 data$num.w.total <- (data$num.w.coc + data$num.w.larvae)
 
 data$HS <- factor(data$HS, levels = c("yes", "no"))
+data$para <- factor(data$para, levels = c("yes", "no"))
 ```
 
 
+## Graphs
+
+### Wasp fate
+
+```{r}
+ggplot(aes(x = num.w.total, y = perc.w.ecl, color = food), data = data) + 
+  theme_bw() + 
+  ylim(0, 1.05) + 
+  geom_point(aes(shape = treatment)) + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) +
+  labs(x = "Number emerged", y = "Percentage of wasps eclosed", color = "Hostplant Consumed", 
+       shape = "Heat Shock Status")
+```
+
+### Maximum mass gained and age at that point
+
+```{r}
+ggplot(aes(x = ttmax, y = mass.max, color = food, shape = treatment), 
+       data = data[data$para == "no", ]) +
+  theme_bw() + 
+  ylim(0, 20) + 
+  xlim(15, 45) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN1.png", width = 8, height = 5)
+```
+
+```{r}
+ggplot(aes(x = ttmax, y = mass.max, color = food, shape = treatment), 
+       data = data[data$treatment != "P HS", ]) +
+  theme_bw() + 
+  ylim(0, 20) + 
+  xlim(15, 45) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 2)) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN2.png", width = 8, height = 5)
+```
+
+```{r}
+ggplot(aes(x = ttmax, y = mass.max, color = food, shape = treatment), data = data) +
+  theme_bw() + 
+  ylim(0, 20) + 
+  xlim(15, 45) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN3.png", width = 8, height = 5)
+```
+
+
+
+# ----- ARCHIVE ----- DO NOT RUN -----
 
 ## Graphs
 
