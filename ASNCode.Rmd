@@ -224,7 +224,7 @@ ggplot(aes(x = num.w.total, y = perc.w.ecl, color = food), data = data) +
   labs(x = "Number emerged", y = "Percentage of wasps eclosed", color = "Hostplant Consumed", 
        shape = "Heat Shock Status")
 
-
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN7.png", width = 8, height = 5)
 ```
 
 # ----- ARCHIVE ----- DO NOT RUN -----
