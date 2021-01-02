@@ -20,7 +20,7 @@ library(viridisLite)
 ## Load in data
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedDec27Final.csv")
+data <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
 scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
 ```
 
@@ -28,6 +28,7 @@ scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
 
 ```{r}
 data <- data[data$fate != "dead" & data$fate != "quink" & data$fate != "wander*" & data$fate != "?", ]
+data <- data[complete.cases(data[, 1]), ]
 
 data$outcome <- data$fate
 
