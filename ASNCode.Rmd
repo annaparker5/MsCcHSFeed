@@ -177,7 +177,7 @@ ggplot(aes(x = area, y = mass.max, color = food, shape = treatment),
   ylim(0, 20) + 
   geom_point() + 
   scale_shape_manual(values = c(19, 1, 17, 2)) + 
-  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (g)",
        shape = "Treatment", color = "Hostplant Consumed")
 
 ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN4.png", width = 8, height = 5)
@@ -192,7 +192,7 @@ ggplot(aes(x = area, y = mass.max, color = food, shape = treatment),
   ylim(0, 20) + 
   geom_point() + 
   scale_shape_manual(values = c(19, 1, 2)) + 
-  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (g)",
        shape = "Treatment", color = "Hostplant Consumed")
 
 ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN5.png", width = 8, height = 5)
@@ -206,7 +206,7 @@ ggplot(aes(x = area, y = mass.max, color = food, shape = treatment), data = data
   ylim(0, 20) + 
   geom_point() + 
   scale_shape_manual(values = c(19, 1, 17, 2)) + 
-  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (g)",
        shape = "Treatment", color = "Hostplant Consumed")
 
 ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN6.png", width = 8, height = 5)
@@ -222,7 +222,7 @@ ggplot(aes(x = num.w.total, y = perc.w.ecl, color = food), data = data) +
   ylim(0, 1.05) + 
   geom_point(aes(shape = treatment)) + 
   scale_shape_manual(values = c(19, 1, 17, 2)) +
-  labs(x = "Number emerged", y = "Percentage of wasps eclosed", color = "Hostplant Consumed", 
+  labs(x = "Number of wasp larvae emerged", y = "Proportion of wasps eclosed", color = "Hostplant Consumed", 
        shape = "Heat Shock Status")
 
 ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN7.png", width = 8, height = 5)
