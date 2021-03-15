@@ -160,16 +160,36 @@ ggplot(aes(x = ttmax, y = mass.max, color = food, shape = fate),
   theme_bw() + 
   ylim(0, 20) + 
   xlim(15, 45) +
-  geom_point(size = 3) + 
+  geom_point(size = 4) + 
   scale_shape_manual(values = c(5, 2, 1, 19)) + 
   geom_errorbar(aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
   geom_errorbarh(aes(xmin = ttmax - se, xmax = ttmax + se), size = .5) + 
   guides(size = FALSE) + 
   labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
        shape = "Developmental Outcome", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/meantime.png", width = 8, height = 5)
 ```
 
+### Maximum mass compared to plant matter consumed
 
+
+```{r}
+ggplot(aes(x = area, y = mass.max, color = food, shape = fate), 
+       data = datameans) + 
+  theme_bw() + 
+  ylim(0, 20) + 
+  xlim(0, 6000) +
+  geom_point(size = 4) + 
+  scale_shape_manual(values = c(5, 2, 1, 19)) + 
+  geom_errorbar(aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
+  geom_errorbarh(aes(xmin = area - searea, xmax = area + searea), size = .5) + 
+  guides(size = FALSE) + 
+  labs(x = "Hostplant leaf area consumed (cm^2)", y = "Maximum mass achieved (g)", 
+       shape = "Developmental Outcome", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/meanarea.png", width = 8, height = 5)
+```
 
 ## Graphs with all datapoints
 
