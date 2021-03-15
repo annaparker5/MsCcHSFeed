@@ -15,6 +15,7 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 library(viridisLite)
+library(Rmisc)
 ```
 
 ## Load in data
@@ -32,7 +33,7 @@ data <- data[complete.cases(data[, 1]), ]
 
 data$outcome <- data$fate
 
-data$outcome <- gsub(" mongo", "", data$outcome)
+#data$outcome <- gsub(" mongo", "", data$outcome)
 data$outcome <- gsub("em", "we", data$outcome)
 
 data$mass.max <- data$mass.max / 1000 
@@ -120,8 +121,57 @@ data$HS <- factor(data$HS, levels = c("yes", "no"))
 data$para <- factor(data$para, levels = c("yes", "no"))
 ```
 
+## Get means for data
 
-## Graphs
+```{r}
+datalong <- data %>%
+  select(ID, food, fate, mass.max, ttmax, area)
+
+meantime <- summarySE(datalong, measurevar = "ttmax", groupvars = c("food", "fate"), na.rm = TRUE)
+
+meanmass <- summarySE(datalong, measurevar = "mass.max", groupvars = c("food", "fate"), na.rm = TRUE)
+
+meanarea <- summarySE(datalong, measurevar = "area", groupvars = c("food", "fate"), na.rm = TRUE)
+```
+
+### Group them into one dataframe
+
+```{r}
+datameans <- meantime %>%
+  select(food, fate, ttmax, se)
+
+datameans$mass.max <- meanmass$mass.max
+datameans$semass <- meanmass$se
+datameans$area <- meanarea$area
+datameans$searea <- meanarea$se
+
+
+
+```
+
+
+## Graphs with means only
+
+### Maximum mass gained and age at that point
+
+```{r}
+ggplot(aes(x = ttmax, y = mass.max, color = food, shape = fate), 
+       data = datameans) + 
+  theme_bw() + 
+  ylim(0, 20) + 
+  xlim(15, 45) +
+  geom_point(size = 3) + 
+  scale_shape_manual(values = c(5, 2, 1, 19)) + 
+  geom_errorbar(aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
+  geom_errorbarh(aes(xmin = ttmax - se, xmax = ttmax + se), size = .5) + 
+  guides(size = FALSE) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Developmental Outcome", color = "Hostplant Consumed")
+```
+
+
+
+## Graphs with all datapoints
 
 ### Maximum mass gained and age at that point
 
