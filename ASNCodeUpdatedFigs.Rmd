@@ -1,0 +1,301 @@
+---
+title: "Code for Graphs for ASN presentation"
+output: html_notebook
+---
+This document contains the code for the graphs I'll include in my 2021 ASN presentation, as well as model results I'll present. 
+
+As such, it doesn't contain all models or all graphs - see WorkingScript.Rmd for a stream-of-consciousness view of my work.
+
+## Load in packages
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lme4)
+library(lubridate)
+library(viridisLite)
+```
+
+## Load in data
+
+```{r}
+data <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
+scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
+```
+
+## Manipulate data into correct forms
+
+```{r}
+data <- data[data$fate != "dead" & data$fate != "quink" & data$fate != "wander*" & data$fate != "?", ]
+data <- data[complete.cases(data[, 1]), ]
+
+data$outcome <- data$fate
+
+data$outcome <- gsub(" mongo", "", data$outcome)
+data$outcome <- gsub("em", "we", data$outcome)
+
+data$mass.max <- data$mass.max / 1000 
+
+```
+
+
+```{r}
+#1
+scan$comb <- paste(scan$Caterpillar.ID, "_", scan$Leaf.ID)
+
+#0
+unique <- unique(scan$comb)
+consumed <- as.data.frame(unique)
+consumed$area <- 0
+
+#2-4
+for (i in 1:length(consumed$unique)){
+    subset <- filter(scan, scan$comb == consumed[i, 1])
+    value <- max(subset$Leaf.Area) - min(subset$Leaf.Area)
+    consumed[i, 2] <- value
+}  
+
+#5
+consumed <- consumed %>%
+  separate(unique, c("catID", "leafID"), "_")
+
+#6
+ID <- unique(consumed$catID)
+consumedsum <- as.data.frame(ID)
+consumedsum$totalarea <- 0
+
+#7
+for (i in 1:length(consumedsum$ID)){
+  subset2 <- filter(consumed, consumed$catID == consumedsum[i, 1])
+  value2 <- sum(subset2$area)
+  consumedsum[i, 2] <- value2
+}
+
+#8
+consumedsum$ID <- as.numeric(consumedsum$ID)
+
+consumedsum <- consumedsum[consumedsum$ID %in% data$ID, ]
+
+data <- data[data$ID %in% consumedsum$ID, ]
+
+consumedsum <- consumedsum[order(consumedsum$ID), ]
+
+data$area <- consumedsum$totalarea
+
+```
+
+```{r}
+# Internal process of the loop to convert days to dates
+expt_day <- function(start.date, date){
+  date <- mdy(date)
+  start <- mdy(start.date)
+  diff <- yday(date) - yday(start)
+
+  return(diff)
+}
+
+# Code for the loop itself
+loop <- function(start.date, date.list){
+  days <- rep(NA, length(date.list))
+  for (i in 1:(length(days))){
+    days[i] <- expt_day(start.date = start.date, date = date.list[i])
+  }
+  return(days)
+}
+```
+
+```{r}
+data$day.hatch <- loop(start.date = "07/12/2020", date.list = data$date.hatch)
+data$day.max <- loop(start.date = "07/12/2020", date.list = data$date.max)
+
+data$ttmax <- data$day.max - data$day.hatch
+```
+
+```{r}
+data$perc.w.ecl <- data$num.w.eclos / (data$num.w.coc + data$num.w.larvae)
+data$num.w.total <- (data$num.w.coc + data$num.w.larvae)
+
+data$HS <- factor(data$HS, levels = c("yes", "no"))
+data$para <- factor(data$para, levels = c("yes", "no"))
+```
+
+
+## Graphs
+
+### Maximum mass gained and age at that point
+
+```{r}
+ggplot(aes(x = ttmax, y = mass.max, color = food, shape = treatment), 
+       data = data[data$para == "no", ]) +
+  theme_bw() + 
+  ylim(0, 20) + 
+  xlim(15, 45) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN1.png", width = 8, height = 5)
+```
+
+```{r}
+ggplot(aes(x = ttmax, y = mass.max, color = food, shape = treatment), 
+       data = data[data$treatment != "P HS", ]) +
+  theme_bw() + 
+  ylim(0, 20) + 
+  xlim(15, 45) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 2)) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN2.png", width = 8, height = 5)
+```
+
+```{r}
+ggplot(aes(x = ttmax, y = mass.max, color = food, shape = treatment), data = data) +
+  theme_bw() + 
+  ylim(0, 20) + 
+  xlim(15, 45) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN3.png", width = 8, height = 5)
+```
+
+### Maximum mass compared to plant matter consumed
+
+
+```{r}
+ggplot(aes(x = area, y = mass.max, color = food, shape = treatment), 
+       data = data[data$para == "no", ]) + 
+  theme_bw() + 
+  xlim(0, 6000) + 
+  ylim(0, 20) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (g)",
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN4.png", width = 8, height = 5)
+```
+
+
+```{r}
+ggplot(aes(x = area, y = mass.max, color = food, shape = treatment), 
+       data = data[data$treatment != "P HS", ]) + 
+  theme_bw() + 
+  xlim(0, 6000) + 
+  ylim(0, 20) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 2)) + 
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (g)",
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN5.png", width = 8, height = 5)
+```
+
+
+```{r}
+ggplot(aes(x = area, y = mass.max, color = food, shape = treatment), data = data) + 
+  theme_bw() + 
+  xlim(0, 6000) + 
+  ylim(0, 20) + 
+  geom_point() + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (g)",
+       shape = "Treatment", color = "Hostplant Consumed")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN6.png", width = 8, height = 5)
+```
+
+
+
+### Wasp fate
+
+```{r}
+ggplot(aes(x = num.w.total, y = perc.w.ecl, color = food), data = data) + 
+  theme_bw() + 
+  ylim(0, 1.05) + 
+  geom_point(aes(shape = treatment)) + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) +
+  labs(x = "Number of wasp larvae emerged", y = "Proportion of wasps eclosed", color = "Hostplant Consumed", 
+       shape = "Heat Shock Status")
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/ASN7.png", width = 8, height = 5)
+```
+
+# ----- ARCHIVE ----- DO NOT RUN -----
+
+## Graphs
+
+```{r}
+TBdata <- data[data$food == "TB", ]
+DCdata <- data[data$food == "DC", ]
+```
+
+Three colors I'm using: 
+
+("#66CB5D", "#21908D", "#3E4F8A", "#450D54")
+("#460F5A", "#87D548", "#30B67B")
+
+
+wander: #882255
+we: #88CCEE
+wowe: #117733
+
+### Wasp fate
+
+```{r}
+ggplot(aes(x = num.w.total, y = perc.w.ecl, color = HS), data = data) + 
+  theme_bw() + 
+  ylim(0, 1.05) + 
+  geom_smooth(method = "lm", se = F) +
+  geom_point(alpha = 0.8, aes(shape = food)) + 
+  scale_shape_manual(values = c(19, 6)) +
+  scale_color_manual(values = c("#EF000D", "#00CFD2")) + 
+  labs(x = "Number emerged", y = "Percentage of wasps eclosed", shape = "Hostplant Consumed", 
+       color = "Heat Shock Status")
+```
+
+
+### Maximum mass gained and age at that point
+
+```{r}
+ggplot(aes(x = ttmax, y = mass.max, color = outcome, shape = food), data = data) +
+  theme_bw() + 
+  geom_point(alpha = 0.8) + 
+  scale_shape_manual(values = c(19, 6)) + 
+  scale_color_manual(values = c("#882255", "#88CCEE", "#117733")) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (mg)", 
+       color = "Developmental Outcome", shape = "Hostplant Consumed")
+```
+
+```{r}
+dataPHS <- data[data$treatment == "P HS", ]
+
+ggplot(aes(x = ttmax, y = mass.max, color = fate), data = dataPHS) +
+  theme_bw() + 
+  geom_point(alpha = 0.8) + 
+  scale_color_manual(values = c("#66CB5D", "#21908D", "#3E4F8A", "#450D54")) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (mg)", 
+       color = "Developmental Outcome")
+```
+
+
+### Maximum mass compared to plant matter consumed
+
+```{r}
+ggplot(aes(x = area, y = mass.max), data = data) + 
+  theme_bw() + 
+  geom_point(aes(color = outcome, shape = food)) + 
+  scale_shape_manual(values = c(19, 6)) + 
+  scale_color_manual(values = c("#882255", "#88CCEE", "#117733")) +
+  labs(x = "Leaf surface area consumed (cm2)", y = "Maximum mass achieved (mg)",
+       color = "Developmental Outcome", shape = "Hostplant Consumed")
+```
+
+
