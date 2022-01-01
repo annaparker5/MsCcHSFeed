@@ -1,0 +1,214 @@
+---
+title: "Samples Sizes - MsCcHSFeed"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(Rmisc)
+```
+
+
+```{r}
+data <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
+scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
+```
+
+## Manipulate data into correct forms
+
+```{r}
+data <- data[data$fate != "dead" & data$fate != "quink" & data$fate != "wander*" & data$fate != "?", ]
+data <- data[complete.cases(data[, 1]), ]
+```
+
+## Count stuff
+
+
+```{r}
+count(data[data$food == "TB" & data$para == "yes" & data$HS == "yes", ])
+count(data[data$food == "TB" & data$para == "yes" & data$HS == "no", ])
+count(data[data$food == "TB" & data$para == "no" & data$HS == "yes", ])
+count(data[data$food == "TB" & data$para == "no" & data$HS == "no", ])
+```
+
+```{r}
+count(data[data$food == "DC" & data$para == "yes" & data$HS == "yes", ])
+count(data[data$food == "DC" & data$para == "yes" & data$HS == "no", ])
+count(data[data$food == "DC" & data$para == "no" & data$HS == "yes", ])
+count(data[data$food == "DC" & data$para == "no" & data$HS == "no", ])
+```
+
+## Make graph of outcomes
+
+```{r}
+data$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+```
+
+```{r}
+bars <- ggplot(data = data, aes(x = treatment, fill = fate)) + 
+  theme_bw() + 
+  geom_bar(position = "fill") + 
+  labs(x = "Treatment group", y = "Proportion of indiviudals", fill = "Developmental Outcome")
+
+bars
+```
+
+```{r}
+bars2 <- ggplot(data = data, aes(x = treatment, fill = fate)) + 
+  theme_bw() + 
+  geom_bar(position = "stack") + 
+  facet_wrap(~food) + 
+  labs(x = "Treatment group", y = "Number of indiviudals", fill = "Developmental Outcome")
+
+bars2
+
+ggsave("~/Desktop/outcomes.png", plot = bars2, width = 8, height = 5)
+```
+
+## This time, keep the dead
+
+```{r}
+datadead <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
+datadead <- datadead[datadead$fate != "quink" & datadead$fate != "wander*" & datadead$fate != "?", ]
+datadead <- datadead[complete.cases(datadead[, 1]), ]
+datadead$treatment <- factor(datadead$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+```
+
+```{r}
+barsdead <- ggplot(data = datadead, aes(x = treatment, fill = fate)) + 
+  theme_bw() + 
+  geom_bar(position = "fill") + 
+  facet_wrap(~food) + 
+  labs(x = "Treatment group", y = "Number of indiviudals", fill = "Developmental Outcome") + 
+  scale_fill_manual(values = c("#D81B60", "orange", "lime green", "#1E88E5", "purple"))
+
+
+barsdead
+
+ggsave("~/Desktop/outcomesdead.png", plot = barsdead, width = 8, height = 5)
+```
+
+# Growth trajectories of NP NHS vs NP HS
+
+## Manipulate the data
+
+```{r}
+# Internal process of the loop to convert days to dates
+expt_day <- function(start.date, date){
+  date <- mdy(date)
+  start <- mdy(start.date)
+  diff <- yday(date) - yday(start)
+
+  return(diff)
+}
+
+# Code for the loop itself
+loop <- function(start.date, date.list){
+  days <- rep(NA, length(date.list))
+  for (i in 1:(length(days))){
+    days[i] <- expt_day(start.date = start.date, date = date.list[i])
+  }
+  return(days)
+}
+```
+
+```{r}
+data$day.hatch <- loop(start.date = "07/12/2020", date.list = data$date.hatch)
+data$day.3rd <- loop(start.date = "07/12/2020", date.list = data$date.3rd)
+data$day.4th <- loop(start.date = "07/12/2020", date.list = data$date.4th)
+data$day.5th <- loop(start.date = "07/12/2020", date.list = data$date.5th)
+data$day.w <- loop(start.date = "07/12/2020", date.list = data$date.w)
+
+data$tthatch <- 0
+data$tt3rd <- data$day.3rd - data$day.hatch
+data$tt4th <- data$day.4th - data$day.hatch
+data$tt5th <- data$day.5th - data$day.hatch
+data$ttw <- data$day.w - data$day.hatch
+```
+
+```{r}
+data$ln.hatch <- log(data$mass.hatch)
+data$ln.3rd <- log(data$mass.3rd)
+data$ln.4th <- log(data$mass.4th)
+data$ln.5th <- log(data$mass.5th)
+data$ln.w <- log(data$mass.w)
+```
+
+
+```{r}
+dataslim <- data[data$treatment == "NP NHS" | data$treatment == "NP HS", ] %>%
+  select(ID, food, fate, treatment, tthatch, ln.hatch, tt3rd, ln.3rd, tt4th, ln.4th, tt5th, ln.5th, ttw, ln.w)
+
+
+```
+
+```{r}
+masslong <- dataslim %>%
+  gather(instar, mass, ln.hatch, ln.3rd, ln.4th, ln.5th, ln.w)
+masslong$instar <- gsub("ln.", "", masslong$instar)
+
+agelong <- dataslim %>%
+  gather(instar, age, tthatch, tt3rd, tt4th, tt5th, ttw)
+agelong$instar <- gsub("tt", "", agelong$instar)
+
+masslong <- masslong %>% 
+  select(ID, treatment, food, instar, mass)
+agelong <- agelong %>% 
+  select(ID, treatment, food, instar, age)
+
+datalong<-merge(masslong, agelong, by=c("ID", "treatment", "food", "instar"))
+
+datalong$instar <- factor(datalong$instar, levels = c("hatch", "3rd", "4th", "5th", "w"))
+
+datalong$newtreatment <- paste(datalong$treatment, datalong$food)
+datalong$newtreatment <- factor(datalong$newtreatment, levels = c("NP NHS DC", "NP NHS TB", "NP HS DC", "NP HS TB"))
+```
+
+```{r}
+
+#calculate means and variation
+
+#constructing summarySE for age and mass to make mean plot
+
+masssum <- summarySE(datalong, measurevar = "mass",
+                  groupvars = c("newtreatment", "instar"),
+                  na.rm=TRUE)
+masssum
+
+agesum <- summarySE(datalong, measurevar = "age",
+                   groupvars = c("newtreatment", "instar"),
+                   na.rm = TRUE)
+agesum
+
+#combine into one data frame
+
+masssum$age <- agesum[, 4]
+masssum$age.se <- agesum[, 6]
+masssum$age.ci <- agesum[, 7]
+```
+
+## Plot the data (with CIs) 
+
+```{r}
+meanplot <- ggplot(masssum, aes(x = age, y = mass, group = newtreatment, color = newtreatment, shape= newtreatment)) + 
+  theme_bw() + 
+  geom_point(size = 4) + 
+  geom_line(aes(linetype = newtreatment), size = 1) + 
+  geom_errorbar(aes(ymin = mass-(ci/2), ymax = mass + (ci/2)),
+                width = .3, size = 1) + 
+  geom_errorbarh(aes(xmin = age - (age.ci/2), xmax = age + (age.ci/2)),
+                 height = .3, size = 1) + 
+  scale_color_manual(values = c("#D81B60","#1E88E5", "#D81B60","#1E88E5" )) +
+  scale_shape_manual(values = c(1, 1, 2, 2)) + 
+  scale_linetype_manual(values = c("dashed", "dashed", "solid", "solid")) + 
+  labs(x = "Total developmental age (days)", y = "Total mass gained (ln)")
+  
+
+
+ggsave("meanplot.png", plot = meanplot, width = 8, height = 5)
+
+meanplot
+```
+
+

@@ -1,0 +1,650 @@
+---
+title: "MsCcHSFeed Outline"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(Rmisc)
+```
+
+
+```{r}
+data <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
+scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
+```
+
+```{r}
+data <- data[data$fate != "dead" & data$fate != "quink" & data$fate != "wander*" & data$fate != "?", ]
+data <- data[complete.cases(data[, 1]), ]
+
+```
+
+
+# Fig 1: Violin plots of max mass
+
+```{r}
+data$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+dataviolin <- data
+dataviolin$fate <- gsub(" mongo", "", dataviolin$fate)
+
+violins <- ggplot(data = dataviolin, aes(x = treatment, y = mass.max)) + 
+  geom_violin(fill = "light grey", color = "light grey") + 
+  geom_jitter(aes(color = fate), width = 0.1, height = 0) + 
+  theme_bw() + 
+  labs(x = "Treatment Group", y  = "Maximum mass achieved (mg)",  color = "Developmental Outcome") + 
+  scale_color_manual(values = c("#1E88E5", "lime green", "#D81B60"), 
+                     labels = c("WE", "Wander", "WOWE"))
+
+violins
+
+ggsave("~/Desktop/violins2.png", violins, width = 8, height = 5)
+
+```
+
+# Fig 2: Developmental outcome proportions
+
+## Make graph of outcomes
+
+```{r}
+data$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+```
+
+## This time, keep the dead
+
+```{r}
+datadead <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
+datadead <- datadead[datadead$fate != "quink" & datadead$fate != "wander*" & datadead$fate != "?", ]
+datadead <- datadead[complete.cases(datadead[, 1]), ]
+datadead$treatment <- factor(datadead$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+```
+
+```{r}
+barsdead <- ggplot(data = datadead, aes(x = treatment, fill = fate)) + 
+  theme_bw() + 
+  geom_bar(position = "fill") + 
+  facet_wrap(~food) + 
+  labs(x = "Treatment group", y = "Proportion of indiviudals", fill = "Developmental Outcome") + 
+  scale_fill_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"),
+                    labels = c("Died", "WE", "Wander", "WOWE", "WOWE mongo"))
+
+
+barsdead
+
+ggsave("~/Desktop/outcomesdead.png", plot = barsdead, width = 8, height = 5)
+```
+
+# Fig 3: Maximum mass and age
+
+```{r}
+newmeans <- ggplot(data = datalong5, aes(x = ttmax, y = mass.max, color = fate, shape = food)) + 
+  theme_bw() + 
+  xlim(15, 45) +
+  geom_point(alpha = 0.4) + 
+  scale_shape_manual(values = c(1, 19)) + 
+  scale_color_manual(values = c("#1E88E5", "lime green", "orange", "#D81B60"), 
+                     labels = c("WE", "Wander", "WOWE", "WOWE mongo")) + 
+  geom_point(aes(x = ttmax, y = mass.max, color = fate, shape = food), data = datameans2, size = 4) + 
+  geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
+  geom_errorbarh(data = datameans2, aes(xmin = ttmax - se, xmax = ttmax + se), size = .5) + 
+  guides(size = FALSE) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (mg)", 
+       shape = "Hostplant Consumed", color = "Developmental Outcome")
+  
+
+newmeans
+
+ggsave("~/Desktop/newmeans.png", newmeans, width = 8, height = 5)
+```
+
+## Stats
+
+### Maximum age differences across treatment and outcome
+
+```{r}
+maxage <- lmer(ttmax ~ fate*food + (1|bin), data = data)
+
+anova(maxage)
+```
+
+```{r}
+maxage2 <- lmer(ttmax ~ fate + food + (1|bin), data = data)
+
+anova(maxage2)
+```
+
+```{r}
+AIC(maxage, maxage2)
+```
+
+
+### Maximum mass
+
+
+```{r}
+maxmass <- lmer(mass.max ~ fate*food + (1|bin), data = data)
+
+anova(maxmass)
+```
+
+# Fig 4: Leaf matter consumed vs. max mass
+
+```{r}
+#1
+scan$comb <- paste(scan$Caterpillar.ID, "_", scan$Leaf.ID)
+
+#0
+unique <- unique(scan$comb)
+consumed <- as.data.frame(unique)
+consumed$area <- 0
+
+#2-4
+for (i in 1:length(consumed$unique)){
+    subset <- filter(scan, scan$comb == consumed[i, 1])
+    value <- max(subset$Leaf.Area) - min(subset$Leaf.Area)
+    consumed[i, 2] <- value
+}  
+
+#5
+consumed <- consumed %>%
+  separate(unique, c("catID", "leafID"), "_")
+
+#6
+ID <- unique(consumed$catID)
+consumedsum <- as.data.frame(ID)
+consumedsum$totalarea <- 0
+
+#7
+for (i in 1:length(consumedsum$ID)){
+  subset2 <- filter(consumed, consumed$catID == consumedsum[i, 1])
+  value2 <- sum(subset2$area)
+  consumedsum[i, 2] <- value2
+}
+
+#8
+consumedsum$ID <- as.numeric(consumedsum$ID)
+
+consumedsum <- consumedsum[consumedsum$ID %in% data$ID, ]
+
+data <- data[data$ID %in% consumedsum$ID, ]
+
+consumedsum <- consumedsum[order(consumedsum$ID), ]
+
+data$area <- consumedsum$totalarea
+
+```
+
+
+```{r}
+datalong5 <- data %>%
+  select(ID, food, fate, mass.max, ttmax, area)
+
+meantime2 <- summarySE(datalong5, measurevar = "ttmax", groupvars = c("food", "fate"), na.rm = TRUE)
+
+meanmass2 <- summarySE(datalong5, measurevar = "mass.max", groupvars = c("food", "fate"), na.rm = TRUE)
+
+meanarea2 <- summarySE(datalong5, measurevar = "area", groupvars = c("food", "fate"), na.rm = TRUE)
+```
+
+### Group them into one dataframe
+
+```{r}
+datameans2 <- meantime2 %>%
+  select(food, fate, ttmax, se)
+
+datameans2$mass.max <- meanmass2$mass.max
+datameans2$semass <- meanmass2$se
+datameans2$area <- meanarea2$area
+datameans2$arease <- meanarea2$se
+
+```
+
+
+
+```{r}
+newarea <- ggplot(data = datalong5, aes(x = area, y = mass.max, color = fate, shape = food)) + 
+  theme_bw() + 
+  geom_point(alpha = 0.4) + 
+  scale_shape_manual(values = c(1, 19)) + 
+  scale_color_manual(values = c("#1E88E5", "lime green", "orange", "#D81B60"), 
+                     labels = c("WE", "Wander", "WOWE", "WOWE mongo")) + 
+  ylim(0, 20000) + 
+  xlim(0, 6000) +
+  geom_point(aes(x = area, y = mass.max, color = fate, shape = food), data = datameans2, size = 4) + 
+  geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
+  geom_errorbarh(data = datameans2, aes(xmin = area - arease, xmax = area + arease), size = .5) + 
+  guides(size = FALSE) + 
+  labs(x = "Hostplant leaf area consumed (cm^2)", y = "Maximum mass achieved (mg)", 
+       shape = "Hostplant Consumed", color = "Developmental Outcome")
+  
+
+newarea
+
+ggsave("~/Desktop/newarea.png", newarea, width = 8, height = 5)
+```
+
+
+## Stats
+
+```{r}
+areatrt <- lmer(area ~ fate*food + (1|bin), data = data)
+
+anova(areatrt)
+```
+
+
+
+# Growth trajectories of different treatment groups 
+
+### Manipulate the data
+
+```{r}
+# Internal process of the loop to convert days to dates
+expt_day <- function(start.date, date){
+  date <- mdy(date)
+  start <- mdy(start.date)
+  diff <- yday(date) - yday(start)
+
+  return(diff)
+}
+
+# Code for the loop itself
+loop <- function(start.date, date.list){
+  days <- rep(NA, length(date.list))
+  for (i in 1:(length(days))){
+    days[i] <- expt_day(start.date = start.date, date = date.list[i])
+  }
+  return(days)
+}
+```
+
+```{r}
+data$day.hatch <- loop(start.date = "07/12/2020", date.list = data$date.hatch)
+data$day.3rd <- loop(start.date = "07/12/2020", date.list = data$date.3rd)
+data$day.4th <- loop(start.date = "07/12/2020", date.list = data$date.4th)
+data$day.5th <- loop(start.date = "07/12/2020", date.list = data$date.5th)
+data$day.w <- loop(start.date = "07/12/2020", date.list = data$date.w)
+
+data$day.5th.2 <- loop(start.date = "07/12/2020", date.list = data$date.5th.2)
+data$day.5th.3 <- loop(start.date = "07/12/2020", date.list = data$date.5th.3)
+data$day.6th <- loop(start.date = "07/12/2020", date.list = data$date.6th)
+data$day.6th.2 <- loop(start.date = "07/12/2020", date.list = data$date.6th.2)
+data$day.6th.3 <- loop(start.date = "07/12/2020", date.list = data$date.6th.3)
+data$day.7th <- loop(start.date = "07/12/2020", date.list = data$date.7th)
+data$day.7th.2 <- loop(start.date = "07/12/2020", date.list = data$date.7th.2)
+data$day.7th.3 <- loop(start.date = "07/12/2020", date.list = data$date.7th.3)
+data$day.coc <- loop(start.date = "07/12/2020", date.list = data$date.coc)
+
+
+data$tthatch <- 0
+data$tt3rd <- data$day.3rd - data$day.hatch
+data$tt4th <- data$day.4th - data$day.hatch
+data$tt5th <- data$day.5th - data$day.hatch
+data$ttw <- data$day.w - data$day.hatch
+
+data$tt5th.2 <- data$day.5th.2 - data$day.hatch
+data$tt5th.3 <- data$day.5th.3 - data$day.hatch
+data$tt6th <- data$day.6th - data$day.hatch
+data$tt6th.2 <- data$day.6th.2 - data$day.hatch
+data$tt6th.3 <- data$day.6th.3 - data$day.hatch
+data$tt7th <- data$day.7th - data$day.hatch
+data$tt7th.2 <- data$day.7th.2 - data$day.hatch
+data$tt7th.3 <- data$day.7th.3 - data$day.hatch
+data$ttcoc <- data$day.coc - data$day.hatch
+
+```
+
+```{r}
+data$ln.hatch <- log(data$mass.hatch)
+data$ln.3rd <- log(data$mass.3rd)
+data$ln.4th <- log(data$mass.4th)
+data$ln.5th <- log(data$mass.5th)
+data$ln.w <- log(data$mass.w)
+
+data$ln.5th.2 <- log(data$mass.5th.2)
+data$ln.5th.3 <- log(data$mass.5th.3)
+data$ln.6th <- log(data$mass.6th)
+data$ln.6th.2 <- log(data$mass.6th.2)
+data$ln.6th.3 <- log(data$mass.6th.3)
+data$ln.7th <- log(data$mass.7th)
+data$ln.7th.2 <- log(data$mass.7th.2)
+data$ln.7th.3 <- log(data$mass.7th.3)
+data$ln.coc <- log(data$mass.remove)
+
+```
+
+
+```{r}
+dataslim <- data[data$treatment == "NP NHS" | data$treatment == "NP HS", ] %>%
+  select(ID, food, fate, treatment, tthatch, ln.hatch, tt3rd, ln.3rd, tt4th, ln.4th, tt5th, ln.5th, ttw, ln.w)
+
+dataslim2 <- data[data$treatment == "P NHS" | data$treatment == "P HS", ] %>%
+  select(ID, food, fate, treatment, tthatch, ln.hatch, tt3rd, ln.3rd, tt4th, ln.4th, tt5th, ln.5th, tt5th.2, 
+         ln.5th.2, tt5th.3, ln.5th.3, tt6th, ln.6th, tt6th.2, ln.6th.2, tt6th.3, ln.6th.3, tt7th, ln.7th, 
+         tt7th.2, ln.7th.2, tt7th.3, ln.7th.3, ttcoc, ln.coc )
+```
+
+
+## NP NHS vs NP HS
+
+### More manupulation
+
+```{r}
+masslong <- dataslim %>%
+  gather(instar, mass, ln.hatch, ln.3rd, ln.4th, ln.5th, ln.w)
+masslong$instar <- gsub("ln.", "", masslong$instar)
+
+agelong <- dataslim %>%
+  gather(instar, age, tthatch, tt3rd, tt4th, tt5th, ttw)
+agelong$instar <- gsub("tt", "", agelong$instar)
+
+masslong <- masslong %>% 
+  select(ID, treatment, food, instar, mass)
+agelong <- agelong %>% 
+  select(ID, treatment, food, instar, age)
+
+datalong<-merge(masslong, agelong, by=c("ID", "treatment", "food", "instar"))
+
+datalong$instar <- factor(datalong$instar, levels = c("hatch", "3rd", "4th", "5th", "w"))
+
+datalong$newtreatment <- paste(datalong$treatment, datalong$food)
+datalong$newtreatment <- factor(datalong$newtreatment, levels = c("NP NHS DC", "NP NHS TB", "NP HS DC", "NP HS TB"))
+```
+
+```{r}
+
+#calculate means and variation
+
+#constructing summarySE for age and mass to make mean plot
+
+masssum <- summarySE(datalong, measurevar = "mass",
+                  groupvars = c("newtreatment", "instar"),
+                  na.rm=TRUE)
+masssum
+
+agesum <- summarySE(datalong, measurevar = "age",
+                   groupvars = c("newtreatment", "instar"),
+                   na.rm = TRUE)
+agesum
+
+#combine into one data frame
+
+masssum$age <- agesum[, 4]
+masssum$age.se <- agesum[, 6]
+masssum$age.ci <- agesum[, 7]
+```
+
+### Plot the data (with CIs) 
+
+```{r}
+meanplot <- ggplot(masssum, aes(x = age, y = mass, group = newtreatment, color = newtreatment, shape= newtreatment)) + 
+  theme_bw() + 
+  geom_point(size = 4) + 
+  geom_line(aes(linetype = newtreatment), size = 1) + 
+  geom_errorbar(aes(ymin = mass-(ci/2), ymax = mass + (ci/2)),
+                width = .3, size = 1) + 
+  geom_errorbarh(aes(xmin = age - (age.ci/2), xmax = age + (age.ci/2)),
+                 height = .3, size = 1) + 
+  scale_color_manual(values = c("#D81B60","#1E88E5", "#D81B60","#1E88E5" )) +
+  scale_shape_manual(values = c(1, 1, 2, 2)) + 
+  scale_linetype_manual(values = c("dashed", "dashed", "solid", "solid")) + 
+  labs(x = "Total developmental age (days)", y = "Total mass gained (ln)")
+  
+
+
+ggsave("meanplot.png", plot = meanplot, width = 8, height = 5)
+
+meanplot
+```
+
+## P NHS v P HS
+
+### Data manipulation - log scale
+
+```{r}
+masslong2 <- dataslim2 %>%
+  gather(instar, mass, ln.hatch, ln.3rd, ln.4th, ln.5th, ln.5th.2, ln.5th.3, ln.6th, ln.6th.2, ln.6th.3, ln.7th,
+         ln.7th.2, ln.7th.3, ln.coc)
+masslong2$instar <- gsub("ln.", "", masslong2$instar)
+
+agelong2 <- dataslim2 %>%
+  gather(instar, age, tthatch, tt3rd, tt4th, tt5th, tt5th.2, tt5th.3, tt6th, tt6th.2, tt6th.3, tt7th, tt7th.2,
+         tt7th.3, ttcoc)
+agelong2$instar <- gsub("tt", "", agelong2$instar)
+
+masslong2 <- masslong2 %>% 
+  select(ID, treatment, food, instar, mass)
+agelong2 <- agelong2 %>% 
+  select(ID, treatment, food, instar, age)
+
+datalong2<-merge(masslong2, agelong2, by=c("ID", "treatment", "food", "instar"))
+
+#datalong2$instar <- factor(datalong2$instar, levels = c("hatch", "3rd", "4th", "5th", "w"))
+
+datalong2$newtreatment <- paste(datalong2$treatment, datalong2$food)
+datalong2$newtreatment <- factor(datalong2$newtreatment, levels = c("P NHS DC", "P NHS TB", "P HS DC", "P HS TB"))
+```
+
+### Individual trajectories - log scale
+
+```{r}
+spaghettiplot <- ggplot(datalong2, aes(x = age, y = mass, group = ID, color = newtreatment, 
+                                     shape= newtreatment)) + 
+  theme_bw() + 
+  geom_point() + 
+  geom_line(aes(linetype = newtreatment), size = .8) + 
+  #geom_errorbar(aes(ymin = mass-(ci/2), ymax = mass + (ci/2)),
+               # width = .3, size = 1) + 
+  #geom_errorbarh(aes(xmin = age - (age.ci/2), xmax = age + (age.ci/2)),
+               #  height = .3, size = 1) + 
+  scale_color_manual(values = c("#D81B60","#1E88E5", "#D81B60","#1E88E5" )) +
+  scale_shape_manual(values = c(1, 1, 2, 2)) + 
+  scale_linetype_manual(values = c("solid", "solid", "dashed", "dashed")) + 
+  labs(x = "Total developmental age (days)", y = "Total mass gained (ln)")
+  
+spaghettiplot
+
+ggsave("~/Desktop/lnspaghettiplot.png", plot = spaghettiplot, width = 8, height = 5)
+```
+
+### Data manipulation - normal scale
+
+```{r}
+dataslim3 <- data[data$treatment == "P NHS" | data$treatment == "P HS", ] %>%
+  select(ID, food, fate, treatment, tthatch, mass.hatch, tt3rd, mass.3rd, tt4th, mass.4th, tt5th, mass.5th, tt5th.2, 
+         mass.5th.2, tt5th.3, mass.5th.3, tt6th, mass.6th, tt6th.2, mass.6th.2, tt6th.3, mass.6th.3, tt7th, mass.7th, 
+         tt7th.2, mass.7th.2, tt7th.3, mass.7th.3, ttcoc, mass.remove )
+
+dataslim3$mass.coc <- dataslim3$mass.remove
+
+masslong3 <- dataslim3 %>%
+  gather(instar, mass, mass.hatch, mass.3rd, mass.4th, mass.5th, mass.5th.2, mass.5th.3, mass.6th, mass.6th.2,
+         mass.6th.3, mass.7th, mass.7th.2, mass.7th.3, mass.coc)
+masslong3$instar <- gsub("mass.", "", masslong3$instar)
+
+agelong3 <- dataslim3 %>%
+  gather(instar, age, tthatch, tt3rd, tt4th, tt5th, tt5th.2, tt5th.3, tt6th, tt6th.2, tt6th.3, tt7th, tt7th.2,
+         tt7th.3, ttcoc)
+agelong3$instar <- gsub("tt", "", agelong2$instar)
+
+masslong3 <- masslong3 %>% 
+  select(ID, treatment, food, instar, mass)
+agelong3 <- agelong3 %>% 
+  select(ID, treatment, food, instar, age)
+
+datalong3<-merge(masslong3, agelong3, by=c("ID", "treatment", "food", "instar"))
+
+#datalong2$instar <- factor(datalong2$instar, levels = c("hatch", "3rd", "4th", "5th", "w"))
+
+datalong3$newtreatment <- paste(datalong3$treatment, datalong3$food)
+datalong3$newtreatment <- factor(datalong3$newtreatment, levels = c("P NHS DC", "P NHS TB", "P HS DC", "P HS TB"))
+```
+
+### Graphing - normal scale
+
+```{r}
+spaghettiplot2 <- ggplot(datalong3, aes(x = age, y = mass, group = ID, color = newtreatment, 
+                                     shape= newtreatment)) + 
+  theme_bw() + 
+  geom_point() + 
+  ylim(0, 20000) + 
+  geom_line(aes(linetype = newtreatment), size = .8) + 
+  #geom_errorbar(aes(ymin = mass-(ci/2), ymax = mass + (ci/2)),
+               # width = .3, size = 1) + 
+  #geom_errorbarh(aes(xmin = age - (age.ci/2), xmax = age + (age.ci/2)),
+               #  height = .3, size = 1) + 
+  scale_color_manual(values = c("#D81B60","#1E88E5", "#D81B60","#1E88E5" )) +
+  scale_shape_manual(values = c(1, 1, 2, 2)) + 
+  scale_linetype_manual(values = c("solid", "solid", "dashed", "dashed")) + 
+  labs(x = "Total developmental age (days)", y = "Total mass gained (mg)")
+  
+spaghettiplot2
+
+ggsave("~/Desktop/spaghettiplot.png", plot = spaghettiplot2, width = 8, height = 5)
+```
+
+# Wasp emergence
+
+We need to make sure the numbers of wasps emerging and eclosing from TB PNHS and DC PNHS caterpillars is the same with this data. 
+
+## Manipulate the data
+
+```{r}
+datawasp <- data %>%
+  select(ID, food, treatment, date.coc, mass.remove, wet, num.w.coc, num.w.larvae, num.w.eclos)
+
+datawasp <- datawasp[complete.cases(datawasp$num.w.coc), ]
+```
+
+```{r}
+datawasp$num.w.tot <- datawasp$num.w.coc + datawasp$num.w.larvae
+datawasp$prop.eclos <- datawasp$num.w.eclos / datawasp$num.w.tot
+```
+
+## Start graphing and running stats
+
+```{r}
+ggplot(data = datawasp, aes(x = treatment, y = num.w.tot)) + 
+  theme_bw() + 
+  geom_boxplot()
+```
+
+```{r}
+ggplot(data = datawasp, aes(x = food, y = num.w.tot)) + 
+  theme_bw() + 
+  geom_boxplot() + 
+  labs(x = "Food Type", y = "Total number of wasps emerged")
+```
+
+```{r}
+waspmod1 <- lm(num.w.tot ~ food, data = datawasp[datawasp$treatment == "P NHS", ])
+
+anova(waspmod1)
+```
+
+```{r}
+ggplot(data = datawasp[datawasp$treatment == "P NHS", ], aes(x = food, y = prop.eclos)) + 
+  theme_bw() + 
+  geom_boxplot() + 
+  labs(x = "Food Type", y = "Proportion of emerged wasps successfully eclosed")
+```
+
+```{r}
+waspmod2 <- glm(prop.eclos ~ food, family = "binomial", data = datawasp[datawasp$treatment == "P NHS", ])
+
+summary(waspmod2)
+```
+
+
+
+```{r}
+ggplot(data = datawasp, aes(x = mass.remove, y = num.w.tot, color = food)) + 
+  theme_bw() + 
+  geom_point()
+```
+
+
+
+# Redone development time plot - means and SDs 
+
+```{r}
+data$day.max <- loop(start.date = "07/12/2020", date.list = data$date.max)
+data$ttmax <- data$day.max - data$day.hatch
+```
+
+
+```{r}
+datalong4 <- data %>%
+  select(ID, food, treatment, mass.max, ttmax)
+
+meantime <- summarySE(datalong4, measurevar = "ttmax", groupvars = c("food", "treatment"), na.rm = TRUE)
+
+meanmass <- summarySE(datalong4, measurevar = "mass.max", groupvars = c("food", "treatment"), na.rm = TRUE)
+
+
+datameans <- meantime %>%
+  select(food, treatment, ttmax, sd)
+
+datameans$mass.max <- meanmass$mass.max
+datameans$sdmass <- meanmass$sd
+```
+
+
+
+```{r}
+meansbytrt <- ggplot(aes(x = ttmax, y = mass.max, color = food, shape = treatment), data = datalong4) +
+  theme_bw() + 
+  xlim(15, 45) + 
+  geom_point(alpha = 0.4) + 
+  scale_shape_manual(values = c(19, 1, 17, 2)) + 
+  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Treatment", color = "Hostplant Consumed") + 
+  geom_point(data = datameans, aes(x = ttmax, y = mass.max, color = food, shape = treatment), size = 4) + 
+  geom_errorbar(data = datameans, aes(ymin = mass.max - sdmass, ymax = mass.max + sdmass), size = .5) + 
+  geom_errorbarh(data = datameans, aes(xmin = ttmax - sd, xmax = ttmax + sd), size = .5) + 
+  guides(size = FALSE)
+  
+meansbytrt
+
+ggsave("~/Desktop/meansbytrt.png", plot = meansbytrt, width = 8, height = 5)
+```
+
+## Add points onto developmental outcomes graph
+
+
+```{r}
+datalong5 <- data %>%
+  select(ID, food, fate, mass.max, ttmax, area)
+
+meantime2 <- summarySE(datalong5, measurevar = "ttmax", groupvars = c("food", "fate"), na.rm = TRUE)
+
+meanmass2 <- summarySE(datalong5, measurevar = "mass.max", groupvars = c("food", "fate"), na.rm = TRUE)
+```
+
+### Group them into one dataframe
+
+```{r}
+datameans2 <- meantime2 %>%
+  select(food, fate, ttmax, se)
+
+datameans2$mass.max <- meanmass2$mass.max
+datameans2$semass <- meanmass2$se
+
+```
+
+
+## Graphs with means only
+
+### Maximum mass gained and age at that point
+
+
+
+
+
+
+
+
+
+
+
