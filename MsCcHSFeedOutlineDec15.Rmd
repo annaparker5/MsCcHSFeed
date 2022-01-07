@@ -178,8 +178,6 @@ data$area <- data$area / 10000
 ```
 
 
-
-
 ```{r}
 datalong5 <- data %>%
   select(ID, food, fate, mass.max, ttmax, area)
@@ -313,6 +311,76 @@ AIC(areatrt, areatrt2)
 anova(areatrt, areatrt2)
 ```
 
+# Additional analyses
+
+## Binomial of deaths between NP and P groups 
+
+```{r}
+binomdeath <- datadead %>%
+  select(ID, food, para, survived)
+
+binomdeath$survived <- gsub("yes", 1, binomdeath$survived)
+binomdeath$survived <- gsub("no", 0, binomdeath$survived)
+
+binomdeath$survived <- as.numeric(binomdeath$survived)
+```
+
+### Run stats
+
+```{r}
+death <- glm(survived ~ food*para, data = binomdeath, family = "binomial")
+
+summary(death)
+```
+
+```{r}
+death2 <- glm(survived ~ para, data = binomdeath, family = "binomial")
+
+summary(death2)
+```
+
+## Binomial of WOWE mongo outcomes 
+
+```{r}
+binomWOWE <- data %>%
+  select(ID, food, fate)
+
+binomWOWE$fate <- gsub("wowe mongo", 1, binomWOWE$fate)
+binomWOWE$fate <- gsub("wowe", 0, binomWOWE$fate)
+binomWOWE$fate <- gsub("em", 0, binomWOWE$fate)
+binomWOWE$fate <- gsub("wander", 0, binomWOWE$fate)
+
+binomWOWE$fate <- as.numeric(binomWOWE$fate)
+```
+
+### Run stats
+
+```{r}
+wowe <- glm(fate ~ food, data = binomWOWE, family = "binomial")
+
+summary(wowe)
+```
+
+## Binomial of WE outcomes
+
+```{r}
+binomWE <- data %>%
+  select(ID, food, fate)
+
+binomWE$fate <- gsub("wowe mongo", 0, binomWE$fate)
+binomWE$fate <- gsub("wowe", 0, binomWE$fate)
+binomWE$fate <- gsub("em", 1, binomWE$fate)
+binomWE$fate <- gsub("wander", 0, binomWE$fate)
+
+binomWE$fate <- as.numeric(binomWE$fate)
+```
+
+
+```{r}
+we <- glm(fate ~ food, data = binomWE, family = "binomial")
+
+summary(we)
+```
 
 # Growth trajectories of different treatment groups 
 
