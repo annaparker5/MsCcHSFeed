@@ -342,7 +342,7 @@ summary(death2)
 ## Binomial of WOWE mongo outcomes 
 
 ```{r}
-binomWOWE <- data %>%
+binomWOWE <- data[data$treatment == "P HS", ] %>%
   select(ID, food, fate)
 
 binomWOWE$fate <- gsub("wowe mongo", 1, binomWOWE$fate)
@@ -364,7 +364,7 @@ summary(wowe)
 ## Binomial of WE outcomes
 
 ```{r}
-binomWE <- data %>%
+binomWE <- data[data$treatment == "P HS", ] %>%
   select(ID, food, fate)
 
 binomWE$fate <- gsub("wowe mongo", 0, binomWE$fate)
@@ -380,6 +380,8 @@ binomWE$fate <- as.numeric(binomWE$fate)
 we <- glm(fate ~ food, data = binomWE, family = "binomial")
 
 summary(we)
+
+anova(we, test = "Chisq")
 ```
 
 # Growth trajectories of different treatment groups 
