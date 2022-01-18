@@ -49,7 +49,67 @@ count(datadead[datadead$food == "DC" & datadead$para == "no" & datadead$HS == "y
 count(datadead[datadead$food == "DC" & datadead$para == "no" & datadead$HS == "no", ])
 ```
 
-# Fig 2: Violin plots of max mass
+# Fig 2: Wasp survival across plant types 
+
+```{r}
+datawasp <- data[data$para == "yes", ] %>%
+  select(ID, food, treatment, num.w.coc, num.w.larvae, num.w.eclos)
+
+datawasp <- datawasp[complete.cases(datawasp), ]
+
+datawasp$num.w.tot <- datawasp$num.w.coc + datawasp$num.w.larvae
+datawasp$percent <- (datawasp$num.w.eclos) / (datawasp$num.w.tot)
+```
+
+```{r}
+waspplot <- ggplot(data = datawasp, aes(x = food, y = percent)) +
+  theme_bw() + 
+  geom_boxplot() + 
+  geom_jitter(aes(color = treatment), width = 0.1, height = 0) + 
+  labs(x = "Hostplant", y = "Percent survival from emergence to eclosion", color = "Treatment")
+
+waspplot
+
+ggsave("~/Desktop/waspplot.png", plot = waspplot, width = 8, height = 5)
+
+```
+
+## Statistics
+
+```{r}
+waspbinom <- glm(percent ~ food, family = "binomial", weights = num.w.tot, data = datawasp)
+
+summary(waspbinom)
+
+anova(waspbinom, test = "Chisq")
+
+```
+
+```{r}
+waspbinom2 <- glm(percent ~ food, family = "binomial", weights = num.w.tot, 
+                  data = datawasp[datawasp$treatment == "P NHS", ])
+
+summary(waspbinom2)
+
+anova(waspbinom2, test = "Chisq")
+
+```
+
+```{r}
+waspemerge <- lm(num.w.tot ~ food, data = datawasp)
+
+summary(waspemerge)
+```
+
+
+```{r}
+waspemergetreat <- lm(num.w.tot ~ treatment, data = datawasp)
+
+summary(waspemergetreat)
+```
+
+
+# Fig 3: Violin plots of max mass
 
 ```{r}
 data$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
@@ -72,7 +132,7 @@ ggsave("~/Desktop/violins2.png", violins, width = 8, height = 5)
 
 ```
 
-# Fig 3: Developmental outcome proportions
+# Fig 4: Developmental outcome proportions
 
 ## Make graph of outcomes
 
@@ -98,7 +158,7 @@ barsdead
 ggsave("~/Desktop/outcomesdead.png", plot = barsdead, width = 8, height = 5)
 ```
 
-# Fig 4: Maximum mass and age
+# Fig 5: Maximum mass and age
 
 ## Manipulate the data
 ```{r}
@@ -263,7 +323,7 @@ anova(maxmass2)
 AIC(maxmass, maxmass2)
 ```
 
-# Fig 5: Leaf matter consumed vs. max mass
+# Fig 6: Leaf matter consumed vs. max mass
 
 ```{r}
 newarea <- ggplot(data = datalong5, aes(x = area, y = mass.max, color = fate, shape = food)) + 
