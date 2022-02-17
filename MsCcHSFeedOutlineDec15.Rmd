@@ -62,6 +62,41 @@ datawasp$percent <- (datawasp$num.w.eclos) / (datawasp$num.w.tot)
 ```
 
 ```{r}
+datawasp2 <- datawasp %>%
+  gather(stage, number, num.w.tot, num.w.eclos)
+
+datawasp2$stage <- gsub("num.w.", "", datawasp2$stage)
+datawasp2$stage <- gsub("tot", "Emerged", datawasp2$stage)
+datawasp2$stage <- gsub("eclos", "Eclosed", datawasp2$stage)
+
+datawasp2 <- datawasp2 %>%
+  select(ID, food, treatment, stage, number)
+
+waspmeans <- summarySE(datawasp2, measurevar = "number", groupvars = c("food", "treatment", "stage"))
+waspmeans$stage <- factor(waspmeans$stage, levels = c("Emerged", "Eclosed"))
+waspmeans$comb <- paste(waspmeans$food, waspmeans$treatment, sep = " ")
+```
+
+```{r}
+newwaspplot <- ggplot(data = waspmeans, aes(x = stage, y = number, group = comb, color = treatment)) + 
+  theme_bw() + 
+  geom_line(aes(linetype = food)) + 
+  geom_point(aes(shape = food), size = 3) + 
+  geom_errorbar(aes(ymin = number - se, ymax = number + se), size = 0.25, width = 0.2) + 
+  scale_linetype_manual(values = c("dashed", "solid")) + 
+  scale_shape_manual(values = c(1, 19)) + 
+  labs(x = "Wasp Developmental Stage", y = "Number of wasps per caterpillar host", shape = "Hostplant", 
+       linetype = "Hostplant", color = "Treatment")
+  
+
+newwaspplot
+
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/newwaspplot.png", newwaspplot, width = 8, height = 5)
+```
+
+
+
+```{r}
 waspplot <- ggplot(data = datawasp, aes(x = food, y = percent)) +
   theme_bw() + 
   geom_boxplot() + 
@@ -70,7 +105,7 @@ waspplot <- ggplot(data = datawasp, aes(x = food, y = percent)) +
 
 waspplot
 
-ggsave("~/Desktop/waspplot.png", plot = waspplot, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/waspplot.png", plot = waspplot, width = 8, height = 5)
 
 ```
 
@@ -128,7 +163,7 @@ violins <- ggplot(data = dataviolin, aes(x = treatment, y = mass.max)) +
 
 violins
 
-ggsave("~/Desktop/violins2.png", violins, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/violins2.png", violins, width = 8, height = 5)
 
 ```
 
@@ -155,7 +190,7 @@ barsdead <- ggplot(data = datadead, aes(x = treatment, fill = fate)) +
 
 barsdead
 
-ggsave("~/Desktop/outcomesdead.png", plot = barsdead, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/outcomesdead.png", plot = barsdead, width = 8, height = 5)
 ```
 
 # Fig 5: Maximum mass and age
@@ -280,7 +315,7 @@ newmeans <- ggplot(data = datalong5, aes(x = ttmax, y = mass.max, color = fate, 
 
 newmeans
 
-ggsave("~/Desktop/newmeans.png", newmeans, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/newmeans.png", newmeans, width = 8, height = 5)
 ```
 
 ## Stats
@@ -344,7 +379,7 @@ newarea <- ggplot(data = datalong5, aes(x = area, y = mass.max, color = fate, sh
 
 newarea
 
-ggsave("~/Desktop/newarea.png", newarea, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/newarea.png", newarea, width = 8, height = 5)
 ```
 
 
