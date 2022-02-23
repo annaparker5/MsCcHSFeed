@@ -59,6 +59,7 @@ datawasp <- datawasp[complete.cases(datawasp), ]
 
 datawasp$num.w.tot <- datawasp$num.w.coc + datawasp$num.w.larvae
 datawasp$percent <- (datawasp$num.w.eclos) / (datawasp$num.w.tot)
+datawasp$ln.w.tot <- log(datawasp$num.w.tot + 1)
 ```
 
 ```{r}
@@ -112,7 +113,7 @@ ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/waspplot.png", plot = waspplot, width =
 ## Statistics
 
 ```{r}
-waspbinom <- glm(percent ~ food, family = "binomial", weights = num.w.tot, data = datawasp)
+waspbinom <- glm(percent ~ food*treatment, family = "binomial", weights = num.w.tot, data = datawasp)
 
 summary(waspbinom)
 
@@ -131,16 +132,11 @@ anova(waspbinom2, test = "Chisq")
 ```
 
 ```{r}
-waspemerge <- lm(num.w.tot ~ food, data = datawasp)
+waspemerge <- lm(ln.w.tot ~ food*treatment, data = datawasp)
 
 summary(waspemerge)
-```
 
-
-```{r}
-waspemergetreat <- lm(num.w.tot ~ treatment, data = datawasp)
-
-summary(waspemergetreat)
+anova(waspemerge)
 ```
 
 
