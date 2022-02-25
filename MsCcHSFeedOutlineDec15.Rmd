@@ -6,7 +6,7 @@ output: html_notebook
 ```{r}
 library(ggplot2)
 library(tidyverse)
-#library(Rmisc)
+library(Rmisc)
 library(lubridate)
 library(lmerTest)
 ```
@@ -49,7 +49,8 @@ count(datadead[datadead$food == "DC" & datadead$para == "no" & datadead$HS == "y
 count(datadead[datadead$food == "DC" & datadead$para == "no" & datadead$HS == "no", ])
 ```
 
-# Fig 2: Wasp survival across plant types 
+
+# Table 1: Mean percent eclosion success
 
 ```{r}
 datawasp <- data[data$para == "yes", ] %>%
@@ -61,6 +62,15 @@ datawasp$num.w.tot <- datawasp$num.w.coc + datawasp$num.w.larvae
 datawasp$percent <- (datawasp$num.w.eclos) / (datawasp$num.w.tot)
 datawasp$ln.w.tot <- log(datawasp$num.w.tot + 1)
 ```
+
+
+```{r}
+eclosmeans <- summarySE(datawasp, measurevar = "percent", groupvars = c("food", "treatment"))
+
+eclosmeans
+```
+
+# Fig 2: Wasp survival across plant types 
 
 ```{r}
 datawasp2 <- datawasp %>%
@@ -114,18 +124,6 @@ summary(waspemerge)
 
 anova(waspemerge)
 ```
-
-
-# Table 1: Mean percent eclosion success
-
-```{r}
-eclosmeans <- datawasp %>%
-  group_by(food, treatment) %>%
-    summarise(mean = mean(percent))
-
-eclosmeans
-```
-
 
 
 # Fig 3: Violin plots of max mass
