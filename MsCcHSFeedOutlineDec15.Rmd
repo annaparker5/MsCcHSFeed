@@ -6,7 +6,7 @@ output: html_notebook
 ```{r}
 library(ggplot2)
 library(tidyverse)
-library(Rmisc)
+#library(Rmisc)
 library(lubridate)
 library(lmerTest)
 ```
@@ -95,21 +95,6 @@ newwaspplot
 ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/newwaspplot.png", newwaspplot, width = 8, height = 5)
 ```
 
-
-
-```{r}
-waspplot <- ggplot(data = datawasp, aes(x = food, y = percent)) +
-  theme_bw() + 
-  geom_boxplot() + 
-  geom_jitter(aes(color = treatment), width = 0.1, height = 0) + 
-  labs(x = "Hostplant", y = "Percent survival from emergence to eclosion", color = "Treatment")
-
-waspplot
-
-ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/waspplot.png", plot = waspplot, width = 8, height = 5)
-
-```
-
 ## Statistics
 
 ```{r}
@@ -121,15 +106,6 @@ anova(waspbinom, test = "Chisq")
 
 ```
 
-```{r}
-waspbinom2 <- glm(percent ~ food, family = "binomial", weights = num.w.tot, 
-                  data = datawasp[datawasp$treatment == "P NHS", ])
-
-summary(waspbinom2)
-
-anova(waspbinom2, test = "Chisq")
-
-```
 
 ```{r}
 waspemerge <- lm(ln.w.tot ~ food*treatment, data = datawasp)
@@ -138,6 +114,18 @@ summary(waspemerge)
 
 anova(waspemerge)
 ```
+
+
+# Table 1: Mean percent eclosion success
+
+```{r}
+eclosmeans <- datawasp %>%
+  group_by(food, treatment) %>%
+    summarise(mean = mean(percent))
+
+eclosmeans
+```
+
 
 
 # Fig 3: Violin plots of max mass
