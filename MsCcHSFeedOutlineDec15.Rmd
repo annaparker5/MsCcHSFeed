@@ -167,7 +167,7 @@ barsdead <- ggplot(data = datadead, aes(x = treatment, fill = fate)) +
   facet_wrap(~food) + 
   labs(x = "Treatment group", y = "Proportion of indiviudals", fill = "Developmental Outcome") + 
   scale_fill_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"),
-                    labels = c("Died", "Wander", "WE", "WOWE", "WOWE mongo"))
+                    labels = c("Died", "Wander", "WE", "Small WOWE", "Large WOWE"))
 
 
 barsdead
@@ -286,12 +286,12 @@ newmeans <- ggplot(data = datalong5, aes(x = ttmax, y = mass.max, color = fate, 
   geom_point(alpha = 0.4) + 
   scale_shape_manual(values = c(1, 19)) + 
   scale_color_manual(values = c("#1E88E5", "lime green", "orange", "#D81B60"), 
-                     labels = c("Wander", "WE", "WOWE", "WOWE mongo")) + 
+                     labels = c("Wander", "WE", "Small WOWE", "Large WOWE")) + 
   geom_point(aes(x = ttmax, y = mass.max, color = fate, shape = food), data = datameans2, size = 4) + 
   geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
   geom_errorbarh(data = datameans2, aes(xmin = ttmax - se, xmax = ttmax + se), size = .5) + 
   guides(size = FALSE) + 
-  labs(x = "Development time at maximum mass (days)", y = "Maximum mass achieved (g)", 
+  labs(x = "Age at maximum mass (days)", y = "Maximum mass achieved (g)", 
        shape = "Hostplant Consumed", color = "Developmental Outcome")
   
 
@@ -348,11 +348,11 @@ newarea <- ggplot(data = datalong5, aes(x = area, y = mass.max, color = fate, sh
   geom_point(alpha = 0.4) + 
   scale_shape_manual(values = c(1, 19)) + 
   scale_color_manual(values = c("#1E88E5", "lime green", "orange", "#D81B60"), 
-                     labels = c("Wander", "WE", "WOWE", "WOWE mongo")) + 
+                     labels = c("Wander", "WE", "Small WOWE", "Large WOWE")) + 
   ylim(0, 20) + 
   xlim(0, .6) +
   geom_point(aes(x = area, y = mass.max, color = fate, shape = food), data = datameans2, size = 4) + 
-  geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
+  geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5, width = 0) + 
   geom_errorbarh(data = datameans2, aes(xmin = area - arease, xmax = area + arease), size = .5) + 
   guides(size = FALSE) + 
   labs(x = "Hostplant leaf area consumed (m^2)", y = "Maximum mass achieved (g)", 
