@@ -9,6 +9,8 @@ library(tidyverse)
 library(Rmisc)
 library(lubridate)
 library(lmerTest)
+library(nnet)
+library(jmv)
 ```
 
 
@@ -174,6 +176,36 @@ barsdead
 
 ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/outcomesdead.png", plot = barsdead, width = 8, height = 5)
 ```
+
+## Stats
+
+Multinomial regression from Katherine to report proportions of outcomes in PHS treatment group
+
+```{r}
+datamulti <- data[data$para == "yes" & data$HS == "yes", ]
+datamulti$fate <- factor(datamulti$fate, levels = c("em", "wander", "wowe", "wowe mongo"), labels = c("WE", "Wander", "Small WOWE", "Large WOWE"))
+datamulti$food <- factor(datamulti$food, levels = c("TB", "DC"))
+```
+
+Use the multinom command to run a model
+
+```{r}
+fatemodel <- multinom(fate ~ food, data = datamulti)
+
+summary(fatemodel)
+```
+
+Get p-values: 
+
+```{r}
+fatez <- summary(fatemodel)$coefficients/summary(fatemodel)$standard.errors
+#2-tailed z test
+pfate <- (1-pnorm(abs(fatez), 0, 1))*2
+pfate
+```
+
+
+
 
 # Fig 5: Maximum mass and age
 
