@@ -156,9 +156,25 @@ ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/violins2.png", violins, width = 8, heig
 ## Make graph of outcomes
 
 ```{r}
-data$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+datadead$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
 datadead$fate <- factor(datadead$fate, levels = c("dead", "wander", "em", "wowe", "wowe mongo"))
 ```
+
+## Make dataframe for annotating in the sample sizes
+
+```{r}
+datadeadsum <- summarySE(datadead, 
+                         measurevar = "mass.max", #doesn't matter, just need the Ns, will be NAs anyways
+                         groupvars = c("treatment", "food"))
+
+samplesize <- data.frame(N = datadeadsum$N, 
+                         treatment = datadeadsum$treatment,
+                         food = datadeadsum$food, 
+                         x = c(1, 1, 2, 2, 3, 3, 4, 4), 
+                         y = 1.05,
+                         fate = NA)
+```
+
 
 ## This time, keep the dead
 
@@ -167,9 +183,11 @@ barsdead <- ggplot(data = datadead, aes(x = treatment, fill = fate)) +
   theme_bw() + 
   geom_bar(position = "fill") + 
   facet_wrap(~food) + 
+  scale_y_continuous(breaks = c(0, .25, .5, .75, 1), limits = c(0, 1.07)) + 
   labs(x = "Treatment group", y = "Proportion of indiviudals", fill = "Developmental Outcome") + 
   scale_fill_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"),
-                    labels = c("Died", "Wander", "WE", "Small WOWE", "Large WOWE"))
+                    labels = c("Died", "Wander", "WE", "Small WOWE", "Large WOWE")) + 
+  geom_text(data = samplesize, aes(x = x, y = y, label = N))
 
 
 barsdead
