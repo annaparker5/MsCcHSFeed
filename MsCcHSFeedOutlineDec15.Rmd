@@ -136,18 +136,20 @@ data$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", 
 dataviolin <- data
 dataviolin$fate <- gsub(" mongo", "", dataviolin$fate)
 dataviolin$fate <- factor(dataviolin$fate, levels = c("wander", "em", "wowe"))
+#dataviolin <- dataviolin[dataviolin$food != "", ]
 
 violins <- ggplot(data = dataviolin, aes(x = treatment, y = mass.max)) + 
   geom_violin(fill = "light grey", color = "light grey") + 
-  geom_jitter(aes(color = fate), width = 0.1, height = 0) + 
+  geom_jitter(aes(color = fate, shape = food), width = 0.1, height = 0) + 
   theme_bw() + 
-  labs(x = "Treatment Group", y  = "Maximum mass achieved (mg)",  color = "Developmental Outcome") + 
+  labs(x = "Treatment Group", y  = "Maximum mass achieved (mg)",  color = "Developmental Outcome", shape = "Hostplant") + 
   scale_color_manual(values = c("#1E88E5", "lime green", "#D81B60"), 
-                     labels = c("Wander", "WE", "WOWE"))
+                     labels = c("Wander", "WE", "WOWE")) + 
+  scale_shape_manual(values = c(1, 19))
 
 violins
 
-ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/violins2.png", violins, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/violins3.png", violins, width = 8, height = 5)
 
 ```
 
