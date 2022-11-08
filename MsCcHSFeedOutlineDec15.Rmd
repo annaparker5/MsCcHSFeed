@@ -407,7 +407,7 @@ newarea <- ggplot(data = datalong5, aes(x = area, y = mass.max, color = fate, sh
   geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5, width = 0) + 
   geom_errorbarh(data = datameans2, aes(xmin = area - arease, xmax = area + arease), size = .5) + 
   guides(size = FALSE) + 
-  labs(x = "Hostplant leaf area consumed (m^2)", y = "Maximum mass achieved (g)", 
+  labs(x = expression(paste("Hostplant leaf area consumed ", (m^{2}))), y = "Maximum mass achieved (g)", 
        shape = "Hostplant Consumed", color = "Developmental Outcome")
   
 
