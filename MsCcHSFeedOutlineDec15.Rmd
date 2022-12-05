@@ -158,7 +158,7 @@ ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/violins3.png", violins, width = 8, heig
 ## Make graph of outcomes
 
 ```{r}
-datadead$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+datadead$treatment <- factor(datadead$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
 datadead$fate <- factor(datadead$fate, levels = c("dead", "wander", "em", "wowe", "wowe mongo"))
 ```
 
