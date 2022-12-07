@@ -187,15 +187,19 @@ barsdead <- ggplot(data = datadead, aes(x = treatment, fill = fate)) +
   facet_wrap(~food) + 
   scale_y_continuous(breaks = c(0, .25, .5, .75, 1), limits = c(0, 1.07)) + 
   labs(x = "Treatment group", y = "Proportion of indiviudals", fill = "Developmental Outcome") + 
-  scale_fill_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"),
+  scale_fill_manual(values = c("dead" = "purple", "wander" = "#1E88E5" , "em" = "lime green", 
+                                       "wowe" = "orange", "wowe mongo" =  "#D81B60"),
                     labels = c("Died", "Wander", "WE", "Small WOWE", "Large WOWE")) + 
   geom_text(data = samplesize, aes(x = x, y = y, label = N))
 
 
 barsdead
 
-ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/outcomesdead.png", plot = barsdead, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/outcomesdead.png", barsdead, width = 8, height = 5)
 ```
+
+*Note: Could not get the legend to stop labelling in alphabetical order, so I will switch colors in Photoshop :( *
+
 
 ## Stats
 
