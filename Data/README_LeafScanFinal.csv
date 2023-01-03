@@ -1,0 +1,10 @@
+Column,Explanation,Format,Units
+Caterpillar ID,Unique ID of the caterpillar,Numeric XXX,N/A
+Leaf ID,Unique ID of the leaf scanned,Numeric XXXX,N/A
+Caterpillar Instar,Instar of the caterpillar at time of scan,Numeric,3-7
+Caterpillar Alive,Is the caterpillar alive at time of scan,Factor,yes/no
+Date,Date of scan,M/DD/YYYY,N/A
+Time,Time of scan (decimal),Decimal ,hour
+Leaf Area,Scanned leaf area as calculated by scanner,Numeric,cm^2
+Notes,Any notes associated with that scan,Character,N/A
+Image,Image address to original scan,Character,N/A
