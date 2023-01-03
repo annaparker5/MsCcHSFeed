@@ -3,8 +3,6 @@ title: "Code for Submission"
 output: html_notebook
 ---
 
-Authors: Anna Parker and Joel Kingsolver
-
 This code contains all analyses and figures for the manuscript. It is organized in order of appearance in the manuscript, with the necessary data manipulations happening between steps as required. 
 
 Table of Contents: 
