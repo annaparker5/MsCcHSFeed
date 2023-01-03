@@ -1,0 +1,444 @@
+---
+title: "Code for Submission"
+output: html_notebook
+---
+
+Authors: Anna Parker and Joel Kingsolver
+
+This code contains all analyses and figures for the manuscript. It is organized in order of appearance in the manuscript, with the necessary data manipulations happening between steps as required. 
+
+Table of Contents: 
+0. Load in data and packages
+1. Initial data manipulation
+2. Figures, tables, and statistics (in order of appearance)
+  a. Figure 1
+  b. Figure 2 and associated stats
+  c. Figure 3 and Table 1 and associated stats
+  d. Figure 4, Figure 5, Table 2, Supplemental Table 2, and associated stats
+
+
+## 0. Load in data and packages
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(Rmisc)
+library(lubridate)
+library(lmerTest)
+library(nnet)
+library(jmv)
+```
+  
+
+```{r}
+data <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
+scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
+datadead <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
+```
+
+## 1. Initial data manipulation
+
+```{r}
+data <- data[data$fate != "dead" & data$fate != "quink" & data$fate != "wander*" & data$fate != "?", ]
+data <- data[complete.cases(data[, 1]), ]
+data$fate <- factor(data$fate, levels = c("wander", "em", "wowe", "wowe mongo"))
+
+```
+
+```{r}
+datadead <- datadead[datadead$fate != "quink" & datadead$fate != "wander*" & datadead$fate != "?", ]
+datadead <- datadead[complete.cases(datadead[, 1]), ]
+datadead$treatment <- factor(datadead$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+```
+
+## 2. Figures and statistics
+
+### a. Figure 1
+
+```{r}
+data$treatment <- factor(data$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+
+dataviolin <- data
+dataviolin$fate <- gsub(" mongo", "", dataviolin$fate)
+dataviolin$fate <- factor(dataviolin$fate, levels = c("wander", "em", "wowe"))
+```
+
+#### Graph
+
+```{r}
+violins <- ggplot(data = dataviolin, aes(x = treatment, y = mass.max)) + 
+  geom_violin(fill = "light grey", color = "light grey") + 
+  geom_jitter(aes(color = fate, shape = food), width = 0.1, height = 0) + 
+  theme_bw() + 
+  labs(x = "Treatment Group", y  = "Maximum mass achieved (mg)",  color = "Developmental Outcome", shape = "Hostplant") + 
+  scale_color_manual(values = c("#1E88E5", "lime green", "#D81B60"), 
+                     labels = c("Wander", "WE", "WOWE")) + 
+  scale_shape_manual(values = c(1, 19))
+
+violins
+```
+
+*Brackets and text annotated in Photoshop*
+
+### b. Figure 2 and stats
+
+```{r}
+datadead$treatment <- factor(datadead$treatment, levels = c("NP NHS", "NP HS", "P NHS", "P HS"))
+datadead$fate <- factor(datadead$fate, levels = c("dead", "wander", "em", "wowe", "wowe mongo"))
+```
+
+**Make dataframe for annotating in the sample sizes**
+
+```{r}
+datadeadsum <- summarySE(datadead, 
+                         measurevar = "mass.max", #doesn't matter, just need the Ns, will be NAs anyways
+                         groupvars = c("treatment", "food"))
+
+samplesize <- data.frame(N = datadeadsum$N, 
+                         treatment = datadeadsum$treatment,
+                         food = datadeadsum$food, 
+                         x = c(1, 1, 2, 2, 3, 3, 4, 4), 
+                         y = 1.05,
+                         fate = NA)
+```
+
+#### Graph
+
+```{r}
+barsdead <- ggplot(data = datadead, aes(x = treatment, fill = fate)) + 
+  theme_bw() + 
+  geom_bar(position = "fill") + 
+  facet_wrap(~food) + 
+  scale_y_continuous(breaks = c(0, .25, .5, .75, 1), limits = c(0, 1.07)) + 
+  labs(x = "Treatment group", y = "Proportion of indiviudals", fill = "Developmental Outcome") + 
+  scale_fill_manual(values = c("dead" = "purple", "wander" = "#1E88E5" , "em" = "lime green", 
+                                       "wowe" = "orange", "wowe mongo" =  "#D81B60"),
+                    labels = c("Died", "Wander", "WE", "Small WOWE", "Large WOWE")) + 
+  geom_text(data = samplesize, aes(x = x, y = y, label = N))
+
+
+barsdead
+```
+
+*Note: Could not get the legend to stop labelling in alphabetical order, so I will switch colors in Photoshop :( *
+
+#### Stats
+
+Multinomial regression to report proportions of outcomes in PHS treatment group
+
+```{r}
+datamulti <- data[data$para == "yes" & data$HS == "yes", ]
+datamulti$fate <- factor(datamulti$fate, levels = c("em", "wander", "wowe", "wowe mongo"), labels = c("WE", "Wander", "Small WOWE", "Large WOWE"))
+datamulti$food <- factor(datamulti$food, levels = c("TB", "DC"))
+```
+
+Use the multinom command to run a model
+
+```{r}
+fatemodel <- multinom(fate ~ food, data = datamulti)
+
+summary(fatemodel)
+```
+
+Get p-values: 
+
+```{r}
+fatez <- summary(fatemodel)$coefficients/summary(fatemodel)$standard.errors
+#2-tailed z test
+pfate <- (1-pnorm(abs(fatez), 0, 1))*2
+pfate
+```
+
+
+### c. Figure 3, Table 1, Stats
+
+```{r}
+datawasp <- data[data$para == "yes", ] %>%
+  select(ID, food, treatment, num.w.coc, num.w.larvae, num.w.eclos)
+
+datawasp <- datawasp[complete.cases(datawasp), ]
+
+datawasp$num.w.tot <- datawasp$num.w.coc + datawasp$num.w.larvae
+datawasp$percent <- (datawasp$num.w.eclos) / (datawasp$num.w.tot)
+datawasp$ln.w.tot <- log(datawasp$num.w.tot + 1)
+```
+
+
+#### Table 
+
+```{r}
+eclosmeans <- summarySE(datawasp, measurevar = "percent", groupvars = c("food", "treatment"))
+
+eclosmeans
+```
+
+More manipulation to graph... 
+
+```{r}
+datawasp2 <- datawasp %>%
+  gather(stage, number, num.w.tot, num.w.eclos)
+
+datawasp2$stage <- gsub("num.w.", "", datawasp2$stage)
+datawasp2$stage <- gsub("tot", "Emerged", datawasp2$stage)
+datawasp2$stage <- gsub("eclos", "Eclosed", datawasp2$stage)
+
+datawasp2 <- datawasp2 %>%
+  select(ID, food, treatment, stage, number)
+
+waspmeans <- summarySE(datawasp2, measurevar = "number", groupvars = c("food", "treatment", "stage"))
+waspmeans$stage <- factor(waspmeans$stage, levels = c("Emerged", "Eclosed"))
+waspmeans$comb <- paste(waspmeans$food, waspmeans$treatment, sep = " ")
+```
+
+#### Graph
+
+```{r}
+newwaspplot <- ggplot(data = waspmeans, aes(x = stage, y = number, group = comb, color = treatment)) + 
+  theme_bw() + 
+  geom_line(aes(linetype = food)) + 
+  geom_point(aes(shape = food), size = 3) + 
+  geom_errorbar(aes(ymin = number - se, ymax = number + se), size = 0.25, width = 0.2) + 
+  scale_linetype_manual(values = c("dashed", "solid")) + 
+  scale_shape_manual(values = c(1, 19)) + 
+  labs(x = "Wasp Developmental Stage", y = "Number of wasps per caterpillar host", shape = "Hostplant", 
+       linetype = "Hostplant", color = "Treatment")
+  
+
+newwaspplot
+```
+
+#### Stats
+
+Eclosion success:
+```{r}
+waspbinom <- glm(percent ~ food*treatment, family = "binomial", weights = num.w.tot, data = datawasp)
+
+#summary(waspbinom)
+
+anova(waspbinom, test = "Chisq")
+
+```
+
+Emergence totals:
+```{r}
+waspemerge <- lm(ln.w.tot ~ food*treatment, data = datawasp)
+
+#summary(waspemerge)
+
+anova(waspemerge)
+```
+
+### d. Figure 4 + 5, Table 2 + Supp Table 2, Stats
+
+#### Data manipulation
+```{r}
+# Internal process of the loop to convert days to dates
+expt_day <- function(start.date, date){
+  date <- mdy(date)
+  start <- mdy(start.date)
+  diff <- yday(date) - yday(start)
+
+  return(diff)
+}
+
+# Code for the loop itself
+loop <- function(start.date, date.list){
+  days <- rep(NA, length(date.list))
+  for (i in 1:(length(days))){
+    days[i] <- expt_day(start.date = start.date, date = date.list[i])
+  }
+  return(days)
+}
+```
+
+
+```{r}
+data$day.hatch <- loop(start.date = "07/12/2020", date.list = data$date.hatch)
+data$day.max <- loop(start.date = "07/12/2020", date.list = data$date.max)
+data$ttmax <- data$day.max - data$day.hatch
+
+#Convert from mg to g
+data$mass.max <- data$mass.max / 1000
+```
+
+
+Code to get total leaf area consumed: 
+
+```{r}
+#0 - make unique ID for each caterpillar and leaf eaten
+scan$comb <- paste(scan$Caterpillar.ID, "_", scan$Leaf.ID)
+
+#1 - make an output file
+unique <- unique(scan$comb)
+consumed <- as.data.frame(unique)
+consumed$area <- 0
+
+#2-4 - loop through and subset by each unique ID (before and after), then subtract to get area
+for (i in 1:length(consumed$unique)){
+    subset <- filter(scan, scan$comb == consumed[i, 1])
+    value <- max(subset$Leaf.Area) - min(subset$Leaf.Area)
+    consumed[i, 2] <- value
+}  
+
+#5 - reseparate cat and leaf ID
+consumed <- consumed %>%
+  separate(unique, c("catID", "leafID"), "_")
+
+#6 - make a new output file
+ID <- unique(consumed$catID)
+consumedsum <- as.data.frame(ID)
+consumedsum$totalarea <- 0
+
+#7 - loop through and subset by cat ID and add all areas together
+for (i in 1:length(consumedsum$ID)){
+  subset2 <- filter(consumed, consumed$catID == consumedsum[i, 1])
+  value2 <- sum(subset2$area)
+  consumedsum[i, 2] <- value2
+}
+
+#8 - final data wrangling 
+consumedsum$ID <- as.numeric(consumedsum$ID)
+
+consumedsum <- consumedsum[consumedsum$ID %in% data$ID, ]
+
+data <- data[data$ID %in% consumedsum$ID, ]
+
+consumedsum <- consumedsum[order(consumedsum$ID), ]
+
+
+#9 - add to dataframe
+data$area <- consumedsum$totalarea
+
+#10 - change to m^2 fromm cm^2
+data$area <- data$area / 10000
+
+```
+
+Make new dataframes
+```{r}
+datalong5 <- data %>%
+  select(ID, food, fate, mass.max, ttmax, area)
+
+meantime2 <- summarySE(datalong5, measurevar = "ttmax", groupvars = c("food", "fate"), na.rm = TRUE)
+
+meanmass2 <- summarySE(datalong5, measurevar = "mass.max", groupvars = c("food", "fate"), na.rm = TRUE)
+
+meanarea2 <- summarySE(datalong5, measurevar = "area", groupvars = c("food", "fate"), na.rm = TRUE)
+```
+
+Group means together
+
+```{r}
+datameans2 <- meantime2 %>%
+  select(food, fate, ttmax, se)
+
+datameans2$mass.max <- meanmass2$mass.max
+datameans2$semass <- meanmass2$se
+datameans2$area <- meanarea2$area
+datameans2$arease <- meanarea2$se
+
+```
+
+#### Graph Fig 4
+
+```{r}
+newmeans <- ggplot(data = datalong5, aes(x = ttmax, y = mass.max, color = fate, shape = food)) + 
+  theme_bw() + 
+  xlim(15, 45) +
+  geom_point(alpha = 0.4) + 
+  scale_shape_manual(values = c(1, 19)) + 
+  scale_color_manual(values = c("#1E88E5", "lime green", "orange", "#D81B60"), 
+                     labels = c("Wander", "WE", "Small WOWE", "Large WOWE")) + 
+  geom_point(aes(x = ttmax, y = mass.max, color = fate, shape = food), data = datameans2, size = 4) + 
+  geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
+  geom_errorbarh(data = datameans2, aes(xmin = ttmax - se, xmax = ttmax + se), size = .5) + 
+  guides(size = FALSE) + 
+  labs(x = "Age at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Hostplant Consumed", color = "Developmental Outcome")
+  
+
+newmeans
+```
+
+#### Graph Fig 5
+
+```{r}
+newarea <- ggplot(data = datalong5, aes(x = area, y = mass.max, color = fate, shape = food)) + 
+  theme_bw() + 
+  geom_point(alpha = 0.4) + 
+  scale_shape_manual(values = c(1, 19)) + 
+  scale_color_manual(values = c("#1E88E5", "lime green", "orange", "#D81B60"), 
+                     labels = c("Wander", "WE", "Small WOWE", "Large WOWE")) + 
+  ylim(0, 20) + 
+  xlim(0, .6) +
+  geom_point(aes(x = area, y = mass.max, color = fate, shape = food), data = datameans2, size = 4) + 
+  geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5, width = 0) + 
+  geom_errorbarh(data = datameans2, aes(xmin = area - arease, xmax = area + arease), size = .5) + 
+  guides(size = FALSE) + 
+  labs(x = expression(paste("Hostplant leaf area consumed ", (m^{2}))), y = "Maximum mass achieved (g)", 
+       shape = "Hostplant Consumed", color = "Developmental Outcome")
+  
+
+newarea
+```
+
+#### Stats
+
+*Each tests developmental outcome vs. treatment, then compares them via AIC*
+
+**Maximum age differences across treatment and outcome**
+
+```{r}
+maxage <- lmer(ttmax ~ fate*food + (1|bin), data = data)
+
+anova(maxage)
+```
+
+```{r}
+maxage2 <- lmer(ttmax ~ para*HS*food + (1|bin), data = data)
+
+anova(maxage2)
+```
+
+```{r}
+AIC(maxage, maxage2)
+```
+
+**Maximum mass**
+
+```{r}
+maxmass <- lmer(mass.max ~ fate*food + (1|bin), data = data)
+
+anova(maxmass)
+```
+
+```{r}
+maxmass2 <- lmer(mass.max ~ para*HS*food + (1|bin), data = data)
+
+anova(maxmass2)
+```
+
+```{r}
+AIC(maxmass, maxmass2)
+```
+
+**Leaf area consumed**
+
+```{r}
+areatrt <- lmer(area ~ fate*food + (1|bin), data = data)
+
+anova(areatrt)
+```
+
+
+```{r}
+areatrt2 <- lmer(area ~ para*HS*food + (1|bin), data = data)
+
+anova(areatrt2)
+```
+
+```{r}
+AIC(areatrt, areatrt2)
+```
+
+
