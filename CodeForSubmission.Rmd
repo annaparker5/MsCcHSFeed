@@ -31,9 +31,9 @@ library(jmv)
   
 
 ```{r}
-data <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
-scan <- read.csv("~/Desktop/MsCcHSFeedLeafScanFinal.csv", header = T)
-datadead <- read.csv("~/Desktop/MsCcHSFeedJan1MOD.csv")
+data <- read.csv("~/Desktop/GitHub/MsCcHSFeed/Data/MsCcHSFeedJan1MOD.csv")
+scan <- read.csv("~/Desktop/GitHub/MsCcHSFeed/Data/MsCcHSFeedLeafScanFinal.csv", header = T)
+datadead <- read.csv("~/Desktop/GitHub/MsCcHSFeed/Data/MsCcHSFeedJan1MOD.csv")
 ```
 
 ## 1. Initial data manipulation
