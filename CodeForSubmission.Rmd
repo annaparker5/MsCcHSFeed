@@ -315,7 +315,7 @@ data$area <- data$area / 10000
 Make new dataframes
 ```{r}
 datalong5 <- data %>%
-  select(ID, food, fate, mass.max, ttmax, area)
+  select(ID, food, treatment, fate, mass.max, ttmax, area)
 
 meantime2 <- summarySE(datalong5, measurevar = "ttmax", groupvars = c("food", "fate"), na.rm = TRUE)
 
@@ -356,6 +356,29 @@ newmeans <- ggplot(data = datalong5, aes(x = ttmax, y = mass.max, color = fate, 
   
 
 newmeans
+```
+
+```{r}
+datalong5$treatment <- factor(datalong5$treatment, labels = c("Nonparasitized baseline", "Nonparasitized heat shocked", "Parasitized baseline", "Parasitized heat shocked"))
+
+newmeansfacet <- ggplot(data = datalong5, aes(x = ttmax, y = mass.max, color = fate, shape = food)) + 
+  facet_wrap(~ treatment) + 
+  theme_bw() + 
+  xlim(15, 45) +
+  ylim(0, 20) + 
+  geom_point(alpha = 0.8) + 
+  scale_shape_manual(values = c(1, 19)) + 
+  scale_color_manual(values = c("#1E88E5", "lime green", "orange", "#D81B60"), 
+                     labels = c("Wander", "WE", "Small WOWE", "Large WOWE")) + 
+#  geom_point(aes(x = ttmax, y = mass.max, color = fate, shape = food), data = datameans2, size = 4) + 
+#  geom_errorbar(data = datameans2, aes(ymin = mass.max - semass, ymax = mass.max + semass), size = .5) + 
+#  geom_errorbarh(data = datameans2, aes(xmin = ttmax - se, xmax = ttmax + se), size = .5) + 
+#  guides(size = FALSE) + 
+  labs(x = "Age at maximum mass (days)", y = "Maximum mass achieved (g)", 
+       shape = "Hostplant Consumed", color = "Developmental Outcome") 
+  
+
+newmeansfacet
 ```
 
 #### Graph Fig 5
