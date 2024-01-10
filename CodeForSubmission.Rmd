@@ -359,7 +359,7 @@ ggsave("~/Desktop/GitHub/MsCcHSFeed/Figs/Fig4new.png", newmeansfacet, width = 8,
 newarea <- ggplot(data = datalong5, aes(x = area, y = mass.max, color = fate, shape = food)) + 
   theme_bw() + 
   geom_point(alpha = 0.8, size = 2.5) + 
-  scale_shape_manual(values = c(1, 19), labels = c("Devil's claw", "Tobacaco")) + 
+  scale_shape_manual(values = c(1, 19), labels = c("Devil's claw", "Tobacco")) + 
   scale_color_manual(values = c("#1E88E5", "lime green", "#D81B60"), 
                      labels = c("Wandering", "Wasp emergence", "Without wasp emergence")) + 
   ylim(0, 20) + 
